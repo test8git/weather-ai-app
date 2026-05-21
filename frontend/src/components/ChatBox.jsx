@@ -10,11 +10,11 @@ export default function ChatBox({ city, forecast }) {
   const { setGlobalLoading } = useLoading();
   const [messages, setMessages] = useState([]);
 
-  const askAI = async () => {
+  const askAI = async (inputQuestion = question) => {
 
     try 
     {
-        if (!question.trim()) {
+        if (!inputQuestion.trim()) {
             alert("Please enter your question");
             return;
         }
@@ -22,7 +22,7 @@ export default function ChatBox({ city, forecast }) {
         // Add user message
         const userMessage = {
             role: "user",
-            content: question
+            content: inputQuestion
         }
 
         setMessages(prev => [...prev, userMessage])
@@ -38,9 +38,9 @@ export default function ChatBox({ city, forecast }) {
         },
 
         body: JSON.stringify({
-            city,
-            question,
-            forecast
+            city:city,
+            question:inputQuestion,
+            forecast:forecast
         }),
         });
 
@@ -54,6 +54,8 @@ export default function ChatBox({ city, forecast }) {
         setMessages(prev => [...prev, aiMessage])
 
         setAnswer(data.answer);
+
+        speakText(data.answer);
     }
     catch(error)
     {
@@ -63,7 +65,47 @@ export default function ChatBox({ city, forecast }) {
     {
       setGlobalLoading(false)
     }
+  };
+
+  const startListening = () => 
+  {
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+
+        alert("Speech Recognition not supported in this browser");
+
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event) => {
+
+        const transcript = event.results[0][0].transcript;
+
+        console.log(transcript);
+
+        setQuestion(transcript);
+
+        askAI(transcript);
     };
+
+    recognition.start();
+  };
+  
+  const speakText = (text) => 
+  {
+
+    const speech = new SpeechSynthesisUtterance(text);
+
+    speech.lang = "en-US";
+
+    window.speechSynthesis.speak(speech);
+  };
 
   return (
 
@@ -82,13 +124,8 @@ export default function ChatBox({ city, forecast }) {
           placeholder="Ask about weather..."
           className="border p-3 rounded-xl flex-1"
         />
-
-        <button
-          onClick={askAI}
-          className="bg-blue-600 text-white px-5 rounded-xl"
-        >
-          Ask
-        </button>
+        <button onClick={startListening} className="bg-blue-600 text-white px-5 rounded-xl">🎤 Speak</button>
+        <button onClick={askAI} className="bg-blue-600 text-white px-5 rounded-xl">Ask</button>
 
       </div>
       
