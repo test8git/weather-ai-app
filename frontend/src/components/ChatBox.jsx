@@ -29,7 +29,7 @@ export default function ChatBox({ city, forecast }) {
 
         setGlobalLoading(true)
 
-        const response = await fetch("http://127.0.0.1:8000/chat", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
 
         method: "POST",
 
