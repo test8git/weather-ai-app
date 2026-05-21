@@ -27,7 +27,7 @@ export default function Home() {
       }
 
       const res = await fetch(
-        `http://127.0.0.1:8000/weather?city=${city}`
+        `${process.env.NEXT_PUBLIC_API_URL}/weather?city=${city}`
       );
 
       if (!res.ok) {

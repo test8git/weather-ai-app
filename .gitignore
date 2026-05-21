@@ -3,6 +3,7 @@ venv/
 __pycache__/
 *.pyc
 .env
+.env.local
 
 # Backend
 backend/.env
@@ -16,3 +17,6 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Frontend
+frontend/.env.local
