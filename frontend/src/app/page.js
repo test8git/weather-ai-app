@@ -54,7 +54,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-100 p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-3xl shadow-xl p-8">
+        <div className="bg-white rounded-3xl shadow-xl p-4 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-4xl font-bold text-slate-800">

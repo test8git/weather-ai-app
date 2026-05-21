@@ -109,24 +109,26 @@ export default function ChatBox({ city, forecast }) {
 
   return (
 
-    <div className="bg-white rounded-3xl shadow p-5 mt-6">
+    <div className="bg-white rounded-3xl shadow p-4 md:p-5 mt-6">
 
       <h2 className="text-2xl font-bold mb-4">
         AI Weather Assistant
       </h2>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3">
 
         <input
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="Ask about weather..."
-          className="border p-3 rounded-xl flex-1"
+          className="border p-3 rounded-xl w-full"
         />
-        <button onClick={startListening} className="bg-blue-600 text-white px-5 rounded-xl">🎤 Speak</button>
-        <button onClick={askAI} className="bg-blue-600 text-white px-5 rounded-xl">Ask</button>
 
+        <div className="flex gap-3">
+          <button onClick={startListening} className="bg-blue-600 text-white px-5 py-3 rounded-xl">🎤 Speak</button>
+          <button onClick={() => askAI()} className="bg-blue-600 text-white px-5 py-3 rounded-xl">Ask</button>
+        </div>
       </div>
       
       {/* {answer && (

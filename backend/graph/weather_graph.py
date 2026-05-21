@@ -121,20 +121,20 @@ def generate_advice(state: WeatherState):
 
     try:
 
-        # response = llm.invoke([
-        #     HumanMessage(content=prompt)
-        # ])
+        response = llm.invoke([
+            HumanMessage(content=prompt)
+        ])
 
-        # advice = response.content
+        advice = response.content
 
-        current_temp = float(state['current_temp'])
+        # current_temp = float(state['current_temp'])
 
-        if current_temp > 35:
-            advice = "Very hot weather. Stay hydrated."
-        elif current_temp < 15:
-            advice = "Cold weather. Wear warm clothes."
-        else:
-            advice = "Weather is Pleasant."
+        # if current_temp > 35:
+        #     advice = "Very hot weather. Stay hydrated."
+        # elif current_temp < 15:
+        #     advice = "Cold weather. Wear warm clothes."
+        # else:
+        #     advice = "Weather is Pleasant."
 
     except Exception as e:
 
