@@ -1,0 +1,70 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import requests
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+load_dotenv()
+
+app = FastAPI()
+
+# Allow Next.js frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API Keys
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Configure Gemini
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Gemini model
+model = genai.GenerativeModel("gemini-2.5-flash")
+
+
+@app.get("/weather")
+def get_weather(city: str):
+
+    # Weather API call
+    weather_url = (
+        f"https://api.openweathermap.org/data/2.5/weather"
+        f"?q={city}&appid={WEATHER_API_KEY}&units=metric"
+    )
+
+    weather_response = requests.get(weather_url).json()
+
+    temp = weather_response["main"]["temp"]
+    condition = weather_response["weather"][0]["description"]
+    humidity = weather_response["main"]["humidity"]
+    icon = weather_response["weather"][0]["icon"]
+
+    # OpenAI summary
+    prompt = f"""
+    Weather in {city}:
+    Temperature: {temp}°C
+    Condition: {condition}
+    Humidity: {humidity}%
+
+    Give a short friendly weather summary and clothing advice with emoji.
+    """
+
+    # Gemini response
+    response = model.generate_content(prompt)
+
+    summary = response.text
+
+    return {
+        "city": city,
+        "temperature": temp,
+        "condition": condition,
+        "humidity": humidity,
+        "summary": summary,
+        "icon": icon
+    }
