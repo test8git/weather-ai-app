@@ -15,7 +15,7 @@ export default function ChatBox() {
       askAI();
     }
   };
-  
+
   const askAI = async () => {
 
     try 
@@ -49,17 +49,27 @@ export default function ChatBox() {
 
         const data = await response.json();
 
+        var _answer = "";
+
+        if(Array.isArray(data.answer))
+        {
+            _answer = data.answer[0].text;
+        }
+        else{
+          _answer = data.answer;
+        }
+
         setMessages(prev => [
           ...prev,
           { role: "user", content: question },
-          { role: "assistant", content: data.answer }
+          { role: "assistant", content: _answer }
         ]);
 
         setQuestion("");
 
-        setAnswer(data.answer);
+        setAnswer(_answer);
 
-        // speakText(data.answer);
+        // speakText(_answer);
     }
     catch(error)
     {
