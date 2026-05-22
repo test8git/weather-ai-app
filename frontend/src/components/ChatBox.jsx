@@ -3,29 +3,33 @@
 import { useState } from "react";
 import { useLoading } from "@/context/LoadingContext"
 
-export default function ChatBox({ city, forecast }) {
+export default function ChatBox() {
 
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  // const [city, setCity] = useState("");
   const { setGlobalLoading } = useLoading();
   const [messages, setMessages] = useState([]);
 
-  const askAI = async (inputQuestion = question) => {
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      askAI();
+    }
+  };
+  
+  const askAI = async () => {
 
     try 
     {
-        if (!inputQuestion.trim()) {
+        // if (!city.trim()) {
+        //     alert("Please enter city");
+        //     return;
+        // }
+        if (!question.trim()) {
             alert("Please enter your question");
             return;
         }
 
-        // Add user message
-        const userMessage = {
-            role: "user",
-            content: inputQuestion
-        }
-
-        setMessages(prev => [...prev, userMessage])
+        const session_id = "user-123";
 
         setGlobalLoading(true)
 
@@ -37,25 +41,25 @@ export default function ChatBox({ city, forecast }) {
             "Content-Type": "application/json",
         },
 
-        body: JSON.stringify({
-            city:city,
-            question:inputQuestion,
-            forecast:forecast
-        }),
+          body: JSON.stringify({
+              question:question,
+              session_id:session_id
+          }),
         });
 
         const data = await response.json();
 
-        const aiMessage = {
-        role: "assistant",
-        content: data.answer
-        }
+        setMessages(prev => [
+          ...prev,
+          { role: "user", content: question },
+          { role: "assistant", content: data.answer }
+        ]);
 
-        setMessages(prev => [...prev, aiMessage])
+        setQuestion("");
 
         setAnswer(data.answer);
 
-        speakText(data.answer);
+        // speakText(data.answer);
     }
     catch(error)
     {
@@ -115,18 +119,53 @@ export default function ChatBox({ city, forecast }) {
         AI Weather Assistant
       </h2>
 
+      {messages && (
+
+        <div className="space-y-4 mt-2 mb-3">
+
+            {messages.map((msg, index) => (
+
+                <div key={index} className={msg.role === "user"? "text-right": "text-left"}>
+
+                  <div
+                      className={
+                      msg.role === "user"
+                          ? "bg-blue-500 text-white inline-block p-3 rounded-xl"
+                          : "bg-gray-200 text-black inline-block p-3 rounded-xl"
+                      }
+                  >
+
+                      {msg.content}
+
+                  </div>
+
+                </div>
+
+            ))}
+
+            </div>
+      )}
+
       <div className="flex flex-col gap-3">
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* <input
+                  type="text"
+                  placeholder="Enter city"
+                  className="border p-3 rounded-xl"
+                  value={city} onChange={(e) => setCity(e.target.value)}
+                /> */}
 
-        <input
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Ask about weather..."
-          className="border p-3 rounded-xl w-full"
-        />
-
-        <div className="flex gap-3">
-          <button onClick={startListening} className="bg-blue-600 text-white px-5 py-3 rounded-xl">🎤 Speak</button>
+          <input
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about weather..."
+            className="border p-3 rounded-xl w-full"
+          />
+        </div>
+        <div className="flex justify-end gap-3">
+          {/* <button onClick={startListening} className="bg-blue-600 text-white px-5 py-3 rounded-xl">🎤 Speak</button> */}
           <button onClick={() => askAI()} className="bg-blue-600 text-white px-5 py-3 rounded-xl">Ask</button>
         </div>
       </div>
@@ -140,39 +179,7 @@ export default function ChatBox({ city, forecast }) {
         </div>
       )} */}
 
-      {messages && (
-
-        <div className="space-y-4 mt-2">
-
-            {messages.map((msg, index) => (
-
-                <div
-                key={index}
-                className={
-                    msg.role === "user"
-                    ? "text-right"
-                    : "text-left"
-                }
-                >
-
-                <div
-                    className={
-                    msg.role === "user"
-                        ? "bg-blue-500 text-white inline-block p-3 rounded-xl"
-                        : "bg-gray-200 text-black inline-block p-3 rounded-xl"
-                    }
-                >
-
-                    {msg.content}
-
-                </div>
-
-                </div>
-
-            ))}
-
-            </div>
-      )}
+      
 
     </div>
   );

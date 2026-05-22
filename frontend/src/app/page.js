@@ -8,54 +8,15 @@ import ChatBox from "@/components/ChatBox";
 
 export default function Home() {
 
-  const [city, setCity] = useState("");
   const [weather, setWeather] = useState(null);
   const { setGlobalLoading } = useLoading()
   const [error, setError] = useState("");
-
-  const getWeather = async () => 
-  {
-    try
-    {
-      setWeather(null); 
-      setGlobalLoading(true);
-      setError("");
-
-      if (!city.trim()) {
-          alert("Please enter city name");
-          return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/weather?city=${city}`
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch weather");
-      }
-
-      const data = await res.json();
-
-      setWeather(data);
-
-    }
-    catch (err)
-    {
-
-      setError(err.message);
-
-    }
-    finally
-    {
-      setGlobalLoading(false);
-  }
-};
 
   return (
     <div className="min-h-screen bg-slate-100 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl p-4 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-4xl font-bold text-slate-800">
                 Weather Dashboard
@@ -74,7 +35,7 @@ export default function Home() {
                 Search
               </button>
             </div>            
-          </div>
+          </div> */}
 
             {error && (
               <div>
@@ -84,9 +45,9 @@ export default function Home() {
               </div>
             )}
           
-          {weather && (
+          {/* {weather && ( */}
           <div>  
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-3xl p-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div>
@@ -161,11 +122,11 @@ export default function Home() {
                 }
                 })}
               </div>
-            </div>
+            </div> */}
             {/* <TemperatureChart forecast={weather.chart_data} /> */}
-            <ChatBox city={city} forecast={weather.forecast} />
+            <ChatBox />
           </div>
-          )}
+          {/* )} */}
         </div>
       </div>
     </div>
