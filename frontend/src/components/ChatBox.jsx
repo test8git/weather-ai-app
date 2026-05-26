@@ -265,7 +265,7 @@ export default function ChatBox() {
     <div className="bg-white rounded-3xl shadow p-4 md:p-5 mt-6">
 
       <h2 className="text-2xl font-bold mb-4">
-        AI Weather Assistant
+        General AI Assistant
       </h2>
 
       {messages && (
@@ -333,7 +333,7 @@ export default function ChatBox() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about weather..."
+            placeholder="Ask anything..."
             className="border p-3 rounded-xl w-full"
           />
         </div>

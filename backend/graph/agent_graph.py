@@ -1,13 +1,183 @@
 from langgraph.prebuilt import create_react_agent
 
 from services.llm_factory import get_llm
-from tools.weather_tool import get_weather
+from tools.multi_tool import get_weather, calculate_expression, current_time, search_web, wikipedia_search, search_news
 from tools.memory_tool import save_message, get_history
 
 import json
 
 # Give the AI access to this tool/function
-tools = [get_weather]
+tools = [get_weather, calculate_expression, current_time, search_web, wikipedia_search, search_news]
+
+def sse_event(event_type, content):
+    return f"{json.dumps({
+        "type": event_type,
+        "content": content
+    })}\n\n"
+
+def run_agent_stream(question, session_id, selected_model):
+
+    # Create LLM Dynamically
+    llm = get_llm(selected_model)
+
+    # Create Graph Dynamically
+    graph = create_react_agent(llm, tools)
+    # graph = create_react_agent(llm, [])
+
+    # SAVE USER MESSAGE
+    save_message(session_id, "user", question)
+
+    answer = ""
+
+    # GET OLD HISTORY
+    history = get_history(session_id)
+
+    # COMBINE HISTORY + NEW QUESTION
+    full_prompt = f"""
+    Conversation History:
+    {history}
+
+    User Question:
+    {question}
+    """
+
+    try:
+
+        # STATUS EVENT
+        yield sse_event("status", "🧠 Thinking...")
+
+        for message, metadata in graph.stream(
+            {
+                "messages": [("user", full_prompt)]
+            },
+            stream_mode="messages"
+        ):
+            # DETECT TOOL
+            if hasattr(message, "tool_calls"):
+
+                for tool_call in message.tool_calls:
+
+                    tool_name = tool_call.get("name", "")
+
+                    print("TOOL =", tool_name)
+
+                    if tool_name == "get_weather":
+
+                        yield sse_event(
+                            "status",
+                            "🌦 Fetching weather..."
+                        )
+                    elif tool_name == "calculate_expression":
+
+                        yield sse_event(
+                            "status",
+                            "🧮 Calculating..."
+                        )
+                    elif tool_name == "current_time":
+
+                        yield sse_event(
+                            "status",
+                            "✍ Getting data..."
+                        )
+                    elif tool_name == "search_web":
+
+                        yield sse_event(
+                            "status",
+                            "🌐 Searching..."
+                        )
+                    elif tool_name == "wikipedia_search":
+
+                        yield sse_event(
+                            "status",
+                            "📚 Reading Wikipedia..."
+                        )
+                    elif tool_name == "search_news":
+
+                        yield sse_event(
+                            "status",
+                            "🌐 Searching..."
+                        )
+
+            # TOOL STATUS
+            node = metadata.get("langgraph_node", "")
+
+            # if node == "tools":
+            #     yield sse_event(
+            #         "status",
+            #         "🌦 Calling Weather API..."
+            #     )
+
+            if node == "agent":
+
+                yield sse_event(
+                    "status",
+                    "✍ Generating response..."
+                )
+
+            if hasattr(message, "content"):
+
+                content = message.content
+
+                # STRING CONTENT
+                if isinstance(content, str) and content.strip():
+
+                    content = message.content
+
+                    clean_content = content.strip()
+
+                    if clean_content:
+
+                        answer += clean_content+" "
+
+                        yield sse_event("message", clean_content+" ")
+
+
+                # LIST CONTENT (Gemini sometimes returns list)
+                elif isinstance(content, list):
+
+                    for item in content:
+
+                        if isinstance(item, dict):
+
+                            text = item.get("text", "")
+
+                            clean_content = text.strip()
+
+                            if clean_content:
+
+                                answer += clean_content+" "
+
+                                yield sse_event("message", clean_content+" ")
+
+        # DONE
+        yield sse_event("status", "")
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        error_message = repr(e)
+
+        # print("****************")
+        # print(e)
+        # print("****************")
+        # print(error_message)
+        # print("****************")
+
+        # error_message = f"Error: {str(e)}"
+
+        answer += error_message
+
+        # STREAM ERROR
+        # for word in error_message.split():
+        #     # print("STREAMING:", word)
+            
+        #     yield f"data: {word} \n\n"
+
+        yield sse_event("error", error_message)
+
+    save_message(session_id, "assistant", answer)
+
+
 
 def run_agent(question, session_id, selected_model):
 
@@ -50,130 +220,3 @@ def run_agent(question, session_id, selected_model):
 
     return answer
 
-def sse_event(event_type, content):
-    return f"{json.dumps({
-        "type": event_type,
-        "content": content
-    })}\n\n"
-
-def run_agent_stream(question, session_id, selected_model):
-
-    # Create LLM Dynamically
-    llm = get_llm(selected_model)
-
-    # Create Graph Dynamically
-    graph = create_react_agent(llm, tools)
-
-    # SAVE USER MESSAGE
-    save_message(session_id, "user", question)
-
-    answer = ""
-
-    # GET OLD HISTORY
-    history = get_history(session_id)
-
-    # COMBINE HISTORY + NEW QUESTION
-    full_prompt = f"""
-    Conversation History:
-    {history}
-
-    User Question:
-    {question}
-    """
-
-    try:
-
-        # STATUS EVENT
-        yield sse_event("status", "🧠 Thinking...")
-
-        for message, metadata in graph.stream(
-            {
-                "messages": [("user", full_prompt)]
-            },
-            stream_mode="messages"
-        ):
-
-            # TOOL STATUS
-            node = metadata.get("langgraph_node", "")
-
-            if node == "tools":
-
-                yield sse_event(
-                    "status",
-                    "🌦 Calling Weather API..."
-                )
-
-            elif node == "agent":
-
-                yield sse_event(
-                    "status",
-                    "✍ Generating response..."
-                )
-
-            # print("MESSAGE =>", message)
-            # print("CONTENT =>", message.content)
-
-            if hasattr(message, "content"):
-
-                content = message.content
-
-                # STRING CONTENT
-                if isinstance(content, str) and content.strip():
-
-                    content = message.content
-
-                    answer += content
-
-                    # print("STREAMING:", content)
-
-                    # yield f"data: {content}\n\n"
-
-                    yield sse_event("message", content)
-
-
-                # LIST CONTENT (Gemini sometimes returns list)
-                elif isinstance(content, list):
-
-                    for item in content:
-
-                        if isinstance(item, dict):
-
-                            text = item.get("text", "")
-
-                            if text:
-
-                                answer += text
-
-                                # print("STREAMING:", text)
-
-                                # yield f"data: {text}\n\n"
-
-                                yield sse_event("message", text)
-
-        # DONE
-        yield sse_event("status", "")
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        error_message = repr(e)
-
-        print("****************")
-        print(e)
-        print("****************")
-        print(error_message)
-        print("****************")
-
-        # error_message = f"Error: {str(e)}"
-
-        answer += error_message
-
-        # STREAM ERROR
-        # for word in error_message.split():
-        #     # print("STREAMING:", word)
-            
-        #     yield f"data: {word} \n\n"
-
-        yield sse_event("error", error_message)
-
-    save_message(session_id, "assistant", answer)

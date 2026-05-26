@@ -12,7 +12,7 @@ def get_llm(provider):
 
     provider = provider.lower()
 
-    print("AI Modal = " + provider);
+    print(f"AI Modal = {provider}");
 
     # GEMINI
     if provider == "gemini":
@@ -55,7 +55,7 @@ def get_llm(provider):
             base_url="https://openrouter.ai/api/v1",
             default_headers={
                 "HTTP-Referer": os.getenv("FRONTEND_URL"),
-                "X-Title": "Weather AI App"
+                "X-Title": "AI App"
             },
             max_tokens=2000,
             temperature=0.2,
@@ -72,6 +72,7 @@ def get_llm(provider):
             temperature=0.2,
             streaming=True
         )
+
     # GROQ
     elif provider == "groq":
 
