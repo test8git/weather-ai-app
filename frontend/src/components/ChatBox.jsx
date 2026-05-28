@@ -10,7 +10,7 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 export default function ChatBox() {
 
   const [question, setQuestion] = useState("");
-  // const [city, setCity] = useState("");
+  const [isLoadingLocal, setIsLoadingLocal] = useState(false);
   const { setGlobalLoading } = useLoading();
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("");
@@ -39,6 +39,7 @@ export default function ChatBox() {
 
   const askAI = async () => {
 
+    setIsLoadingLocal(true);
     try 
     {
         // if (!city.trim()) {
@@ -258,7 +259,8 @@ export default function ChatBox() {
     {
       //////setGlobalLoading(false)
       setStatus("");
-      //setSteps([]);
+      setSteps([]);
+      setIsLoadingLocal(false);
     }
   };
 
@@ -423,7 +425,14 @@ export default function ChatBox() {
         </div>
         <div className="flex justify-end gap-3">
           {/* <button onClick={startListening} className="bg-blue-600 text-white px-5 py-3 rounded-xl">🎤 Speak</button> */}
-          <button onClick={() => askAI()} className="bg-blue-600 text-white px-5 py-3 rounded-xl">Ask</button>
+          <button
+          disabled={isLoadingLocal}
+          onClick={() => askAI()} className={`flex items-center gap-2 whitespace-nowrap text-white px-5 py-3 rounded-xl transition-all duration-200 ${isLoadingLocal ? "bg-gray-400 cursor-not-allowed scale-95" : "bg-blue-500 hover:bg-blue-600 hover:scale-105"}`}>
+            {isLoadingLocal && (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+            )}
+            <span>{isLoadingLocal ? "Processing..." : "Ask"}</span>
+          </button>
         </div>
       </div>
       

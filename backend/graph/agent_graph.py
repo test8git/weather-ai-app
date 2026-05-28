@@ -28,6 +28,14 @@ def sse_step(step, status, icon):
 
 def run_agent_stream(question, session_id, selected_model):
 
+    print("CALLING run_agent_stream")
+
+    yield sse_step(
+        "Thinking...",
+        "running",
+        "🧠"
+    )
+
     # Create LLM Dynamically
     llm = get_llm(selected_model)
 
@@ -54,11 +62,11 @@ def run_agent_stream(question, session_id, selected_model):
 
     try:
 
-        # yield sse_event("status", "🧠 Thinking...")
-        # yield sse_step(
-        #     "🧠 Thinking...",
-        #     "running"
-        # )
+        yield sse_step(
+            "Thinking...",
+            "completed",
+            "🧠"
+        )
 
 
 
