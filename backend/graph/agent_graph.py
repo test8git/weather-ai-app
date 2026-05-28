@@ -65,7 +65,7 @@ def run_agent_stream(question, session_id, selected_model):
         yield sse_step(
             "Thinking...",
             "completed",
-            "🧠"
+            "✔️"
         )
 
 
