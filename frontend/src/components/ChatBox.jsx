@@ -14,10 +14,13 @@ export default function ChatBox() {
   const { setGlobalLoading } = useLoading();
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("");
+  const [steps, setSteps] = useState([]);
   const messagesEndRef = useRef(null);
   const [selectedModel, setSelectedModel] = useState("");
 
   const session_id = "user-123";
+
+  //let totalDuration = 0;
 
   // Auto scroll
   useEffect(() => {
@@ -131,18 +134,60 @@ export default function ChatBox() {
 
           for (const line of lines) 
           {
+            if (!line.startsWith("data:"))
+              continue;
+
             if (line.startsWith("data: "))
             {
-                const jsonStr = line.replace("data: ", "");
-                try {
-                  const data = JSON.parse(jsonStr);
+                const jsonStr = line.replace("data: ", "").trim();
 
-                  //console.log("EVENT:", data);
+                if (!jsonStr) continue;
+                try 
+                {
+                  const data = JSON.parse(jsonStr);
 
                   // STATUS
                   if (data.type === "status") {
 
                     setStatus(data.content);
+                  }
+                  // STEP
+                  else if (data.type === "step")
+                  {
+                    setSteps((prev) => {
+
+                      const updated = [...prev];
+
+                      const existingIndex = updated.findIndex(x => x.step === data.step);
+
+                      // STEP ALREADY EXISTS
+                      if (existingIndex >= 0)
+                      {
+                        const existingStep = updated[existingIndex];
+                        if (data.status === "completed" && existingStep.startedAt)
+                        {
+                          data.startedAt = existingStep.startedAt;
+                          data.duration = Date.now() - existingStep.startedAt;
+                        }
+                        updated[existingIndex] = {
+                            ...existingStep,
+                            ...data
+                        };
+                      }
+                      // NEW STEP
+                      else
+                      {
+                        updated.push({
+                            ...data,
+                            startedAt: Date.now()
+                        });
+                      }
+
+                      return updated;
+                    });
+
+                    //totalDuration = steps.reduce((total, step) => total + (step.duration || 0), 0);
+
                   }
                    // MESSAGE
                   else if (data.type === "message") {
@@ -167,8 +212,21 @@ export default function ChatBox() {
                     setStatus("");
 
                     aiMessage.content += "\n❌ " + data.content;
+
+                    setMessages((prev) => {
+
+                        const updated = [...prev];
+
+                        updated[updated.length - 1] = {
+                            ...aiMessage
+                        };
+
+                        return updated;
+                    });
                   }
-                } catch (err) {
+                }
+                catch (err) 
+                {
                   console.error("JSON Parse Error", err);
                 }
                 
@@ -177,23 +235,6 @@ export default function ChatBox() {
         }
 
         
-
-        // var _answer = "";
-
-        // if(Array.isArray(data.answer))
-        // {
-        //   alert("Array");
-        //     _answer = data.answer[0].text;
-        // }
-        // else{
-        //   _answer = data.answer;
-        // }
-
-        // setMessages(prev => [
-        //   ...prev,
-        //   { role: "user", content: question },
-        //   { role: "assistant", content: _answer }
-        // ]);
 
         // setQuestion("");
 
@@ -217,6 +258,7 @@ export default function ChatBox() {
     {
       //////setGlobalLoading(false)
       setStatus("");
+      //setSteps([]);
     }
   };
 
@@ -259,6 +301,15 @@ export default function ChatBox() {
 
     window.speechSynthesis.speak(speech);
   };
+
+  // ✅ CALCULATE HERE
+    const totalDuration = steps.reduce(
+
+        (total, step) =>
+            total + (step.duration || 0),
+
+        0
+    );
 
   return (
 
@@ -308,6 +359,39 @@ export default function ChatBox() {
           {status}
         </div>
       )}
+
+      
+      {steps && steps.length > 0 && (        
+        <div className="bg-gray-100 p-3 rounded-xl mb-3">
+          <div className="flex items-center gap-2 font-semibold mb-2">
+            <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+            Agent Steps ({steps.length})
+            <div className="text-gray-500 text-sm">
+                • {(totalDuration / 1000).toFixed(1)}s
+            </div>
+          </div>
+          {steps.map((step, indexS) => (                      
+              <div key={indexS} className="flex items-center gap-2 text-sm mb-1 ">
+
+                {step.status === "running"}
+
+                {step.status === "completed"}
+
+                {step.status === "error" && "❌"}
+
+                <span><span className="text-gray-500 text-xs">{(indexS + 1).toString().padStart(2, "0")}.</span> {step.icon} {step.step}</span>
+
+                <span className="text-gray-500 text-xs">
+                  {step.duration ? `(${(step.duration / 1000).toFixed(1)}s)` : ""}
+                </span>
+              </div>            
+          ))}
+        </div>
+      )}
+        
+
+        
+
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-col md:flex-row gap-3">

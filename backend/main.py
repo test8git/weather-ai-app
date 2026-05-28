@@ -1,3 +1,4 @@
+from database import init_db
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -9,6 +10,9 @@ from graph.agent_graph import run_agent_stream
 import asyncio
 
 app = FastAPI()
+
+# initialize DB
+init_db()
 
 # CORS
 app.add_middleware(

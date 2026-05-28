@@ -15,6 +15,17 @@ def sse_event(event_type, content):
         "content": content
     })}\n\n"
 
+def sse_step(step, status, icon):
+
+    data = {
+        "type": "step",
+        "step": step,
+        "status": status,
+        "icon": icon
+    }
+
+    return f"{json.dumps(data)}\n\n"
+
 def run_agent_stream(question, session_id, selected_model):
 
     # Create LLM Dynamically
@@ -43,8 +54,23 @@ def run_agent_stream(question, session_id, selected_model):
 
     try:
 
+        # yield sse_event("status", "🧠 Thinking...")
+        # yield sse_step(
+        #     "🧠 Thinking...",
+        #     "running"
+        # )
+
+
+
         # STATUS EVENT
-        yield sse_event("status", "🧠 Thinking...")
+        yield sse_step(
+            "Analyzing your request...",
+            "running",
+            "🔍"
+        )
+
+        isAnalyzingCompleted = False
+        isSearchingWeb = 0
 
         for message, metadata in graph.stream(
             {
@@ -52,69 +78,106 @@ def run_agent_stream(question, session_id, selected_model):
             },
             stream_mode="messages"
         ):
+            if not isAnalyzingCompleted:
+                yield sse_step(
+                    "Analyzing your request...",
+                    "completed",
+                    "✔️"
+                )
+                isAnalyzingCompleted = True
+
+            # TOOL STATUS
+            node = metadata.get("langgraph_node", "")
+
+            # print("META")
+            # print(metadata)
+            # print("MESSAGE")
+            # print(message)
+            # print("Node = " + node)
+
             # DETECT TOOL
             if hasattr(message, "tool_calls"):
+
+                # TOOL STARTED
+                if (isSearchingWeb==0):                    
+                    yield sse_step(
+                        "Searching web...",
+                        "running",
+                        "🔍"
+                    )
+                    isSearchingWeb = 1
 
                 for tool_call in message.tool_calls:
 
                     tool_name = tool_call.get("name", "")
 
-                    print("TOOL =", tool_name)
+                    # print("TOOL =", tool_name)
 
-                    if tool_name == "get_weather":
+                    #region (Old code)
 
-                        yield sse_event(
-                            "status",
-                            "🌦 Fetching weather..."
-                        )
-                    elif tool_name == "calculate_expression":
+                    # if tool_name == "get_weather":
 
-                        yield sse_event(
-                            "status",
-                            "🧮 Calculating..."
-                        )
-                    elif tool_name == "current_time":
+                    #     yield sse_step(
+                    #         "Searching web...",
+                    #         "running",
+                    #         "🌐"
+                    #     )
+                    # elif tool_name == "calculate_expression":
 
-                        yield sse_event(
-                            "status",
-                            "✍ Getting data..."
-                        )
-                    elif tool_name == "search_web":
+                    #     yield sse_step(
+                    #         "Searching web...",
+                    #         "running",
+                    #         "🌐"
+                    #     )
+                    # elif tool_name == "current_time":
 
-                        yield sse_event(
-                            "status",
-                            "🌐 Searching..."
-                        )
-                    elif tool_name == "wikipedia_search":
+                    #     yield sse_step(
+                    #         "Searching web...",
+                    #         "running",
+                    #         "🌐"
+                    #     )
+                    # elif tool_name == "search_web":
 
-                        yield sse_event(
-                            "status",
-                            "📚 Reading Wikipedia..."
-                        )
-                    elif tool_name == "search_news":
+                    #     yield sse_step(
+                    #         "Searching web...",
+                    #         "running",
+                    #         "🌐"
+                    #     )
+                    # elif tool_name == "wikipedia_search":
 
-                        yield sse_event(
-                            "status",
-                            "🌐 Searching..."
-                        )
+                    #     yield sse_step(
+                    #         "Searching web...",
+                    #         "running",
+                    #         "🌐"
+                    #     )
+                    # elif tool_name == "search_news":
 
-            # TOOL STATUS
-            node = metadata.get("langgraph_node", "")
+                    #     yield sse_step(
+                    #         "Searching web...",
+                    #         "running",
+                    #         "🌐"
+                    #     )
 
-            # if node == "tools":
-            #     yield sse_event(
-            #         "status",
-            #         "🌦 Calling Weather API..."
-            #     )
+                    # endregion
+            
 
             if node == "agent":
-
-                yield sse_event(
-                    "status",
-                    "✍ Generating response..."
+                # TOOL COMPLETED → BACK TO AGENT
+                
+                yield sse_step(
+                    "Generating response...",
+                    "running",
+                    "✍️"
                 )
 
             if hasattr(message, "content"):
+                if (isSearchingWeb==1):
+                    yield sse_step(
+                        "Searching web...",
+                        "completed",
+                        "✔️"
+                    )
+                    isSearchingWeb = 2
 
                 content = message.content
 
@@ -148,9 +211,10 @@ def run_agent_stream(question, session_id, selected_model):
                                 answer += clean_content+" "
 
                                 yield sse_event("message", clean_content+" ")
+                        
 
         # DONE
-        yield sse_event("status", "")
+        # yield sse_event("status", "")
 
     except Exception as e:
         import traceback
@@ -177,6 +241,11 @@ def run_agent_stream(question, session_id, selected_model):
 
     save_message(session_id, "assistant", answer)
 
+    yield sse_step(
+        "Generating response...",
+        "completed",
+        "✔️"
+    )
 
 
 def run_agent(question, session_id, selected_model):
