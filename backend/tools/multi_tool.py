@@ -1,5 +1,6 @@
 from tavily import TavilyClient
 from newsapi import NewsApiClient
+import wikipedia
 from langchain.tools import tool
 import requests
 from pathlib import Path
@@ -74,16 +75,58 @@ def current_time(expression: str):
     from datetime import datetime
     return str(datetime.now())
 
-
 @tool(description="Search the web for latest information")
+def search_news(query: str) -> str:
+    
+    try:
+
+        response = newsapi.get_everything(
+            q=query,
+            language="en",
+            sort_by="relevancy",
+            page_size=5
+        )
+
+        articles = response.get("articles", [])
+
+        if not articles:
+            return "No news found."
+
+        output = []
+
+        for article in articles:
+
+            output.append(
+                f"""
+Title: {article.get('title')}
+
+Description:
+{article.get('description')}
+
+URL:
+{article.get('url')}
+"""
+            )
+
+        return "\n\n".join(output)
+
+    except Exception as e:
+
+        return f"News API Error: {str(e)}"
+        
+
+
+
+@tool(description="Search latest news articles")
 def search_web(query: str) -> str:
     
     try:
 
         response = tavily_client.search(
             query=query,
+            topic="news",
             search_depth="advanced",
-            max_results=2
+            max_results=5
         )
 
         output = []
@@ -92,12 +135,10 @@ def search_web(query: str) -> str:
 
             output.append(
                 f"""
-Title: {r['title']}
-
-Content: {r['content']}
-
-URL: {r['url']}
-"""
+                Title: {r['title']}
+                Content: {r['content']}
+                URL: {r['url']}
+                """
             )
 
         return "\n\n".join(output)
@@ -125,46 +166,5 @@ def wikipedia_search(query: str) -> str:
         return f"Wikipedia Error: {str(e)}"
 
 
-@tool(description="Search latest news articles")
-def search_news(query: str) -> str:
-    
-    try:
-
-        response = newsapi.get_everything(
-            q=query,
-            language="en",
-            sort_by="publishedAt",
-            page_size=1
-        )
-
-        articles = response.get("articles", [])
-
-        if not articles:
-            return "No news found."
-
-        output = []
-
-        for article in articles:
-
-            output.append(
-                f"""
-Title: {article.get('title')}
-
-Source: {article.get('source', {}).get('name')}
-
-Published: {article.get('publishedAt')}
-
-Description:
-{article.get('description')}
-
-URL:
-{article.get('url')}
-"""
-            )
-
-        return "\n\n".join(output)
-
-    except Exception as e:
-
-        return f"News API Error: {str(e)}"        
+  
         

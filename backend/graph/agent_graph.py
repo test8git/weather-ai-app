@@ -1,13 +1,14 @@
 from langgraph.prebuilt import create_react_agent
 
 from services.llm_factory import get_llm
-from tools.multi_tool import get_weather, calculate_expression, current_time, search_web, wikipedia_search, search_news
+from tools.multi_tool import get_weather, calculate_expression, current_time, search_news, wikipedia_search
 from tools.memory_tool import save_message, get_history
+from tools.file_tool import read_file_content
 
 import json
 
 # Give the AI access to this tool/function
-tools = [get_weather, calculate_expression, current_time, search_web, wikipedia_search, search_news]
+tools = [get_weather, calculate_expression, current_time, search_news, wikipedia_search]
 
 def sse_event(event_type, content):
     return f"{json.dumps({
@@ -26,9 +27,56 @@ def sse_step(step, status, icon):
 
     return f"{json.dumps(data)}\n\n"
 
-def run_agent_stream(question, session_id, selected_model):
+def should_use_wikipedia(question):
 
-    print("CALLING run_agent_stream")
+    q = question.lower()
+
+    keywords = [
+        "who won",
+        "winner",
+        "result",
+        "history",
+        "when was",
+        "who is",
+        "what is",
+        "ipl 2025",
+        "ipl 2024",
+        "world cup"
+    ]
+
+    return any(k in q for k in keywords)
+
+def should_search(question):
+
+    SEARCH_KEYWORDS = [
+        "today",
+        "latest",
+        "current",
+        "recent",
+        "news",
+        "cricket",
+        "match",
+        "champion",
+        "final",
+        "live",
+        "score",
+        "winner",
+        "result",
+        "weather",
+        "sports",
+        "ipl",
+        "stock",
+        "price",
+        "bitcoin",
+        "election"
+    ]
+
+    q = question.lower()
+
+    return any(keyword in q for keyword in SEARCH_KEYWORDS)
+
+
+def run_agent_stream(question, session_id, selected_model, file_path=None):
 
     yield sse_step(
         "Thinking...",
@@ -39,9 +87,43 @@ def run_agent_stream(question, session_id, selected_model):
     # Create LLM Dynamically
     llm = get_llm(selected_model)
 
-    # Create Graph Dynamically
-    graph = create_react_agent(llm, tools)
-    # graph = create_react_agent(llm, [])
+
+    system_prompt = """
+
+You are a professional AI assistant.
+
+IMPORTANT BEHAVIOR RULES:
+
+- Respond directly with the final answer.
+- NEVER explain internal reasoning.
+- NEVER narrate actions.
+- NEVER mention tools.
+- NEVER say:
+    - "I will use..."
+    - "Let me check..."
+    - "Searching..."
+    - "Using tool..."
+    - "I need to search..."
+
+TOOL USAGE RULES:
+
+- Use tools whenever external or real-time information is required.
+- Use weather tool for weather-related questions.
+- Use search_news for:
+    - news
+    - sports
+    - current events
+    - recent information
+    - today's updates
+
+- Use calculator only for calculations.
+
+- Do NOT refuse valid requests when a tool can answer them.
+- If a tool is available, use it silently and provide the final answer only.
+
+Always provide clean, concise, user-friendly responses.
+
+"""
 
     # SAVE USER MESSAGE
     save_message(session_id, "user", question)
@@ -51,16 +133,43 @@ def run_agent_stream(question, session_id, selected_model):
     # GET OLD HISTORY
     history = get_history(session_id)
 
+    file_data = read_file_content(file_path)
+
+    file_prompt = ""
+    if file_data['content']:
+        file_prompt = f"""
+        IMPORTANT:
+
+        If the file contains an instruction, prompt, question,
+        essay topic, coding task, or assignment,
+        perform the task.
+
+        If the user asks to explain, summarize, analyze,
+        review, or extract information,
+        then analyze the file.
+
+        Respond appropriately.
+        """
+
+
+    # print("File Content : ")
+    # print(file_data["content"])
+
     # COMBINE HISTORY + NEW QUESTION
     full_prompt = f"""
     Conversation History:
     {history}
 
+    File Content:
+    {file_data["content"]}
+
     User Question:
     {question}
+
+    {file_prompt}
     """
 
-    try:
+    try:        
 
         yield sse_step(
             "Thinking...",
@@ -68,6 +177,105 @@ def run_agent_stream(question, session_id, selected_model):
             "✔️"
         )
 
+        # CHECK FIRST
+        if should_use_wikipedia(question):
+
+            yield sse_step(
+                "Searching web...",
+                "running",
+                "🌐"
+            )
+
+            search_result = wikipedia_search.invoke(question)
+
+            yield sse_step(
+                "Searching web...",
+                "completed",
+                "✔️"
+            )
+
+            # yield sse_event("message", search_result)
+
+            formatted = llm.invoke(
+                f"""
+                Question:
+                {question}
+
+                Uploaded File:
+                {file_content}
+
+                Search Result:
+                {search_result}
+
+                Answer using both the uploaded file
+                and the search result if relevant.
+                """
+            )
+
+            yield sse_event(
+                "message",
+                formatted.content
+            )
+            
+            save_message(session_id, "assistant", answer)
+
+            return
+
+        # CHECK FIRST
+        if should_search(question):
+
+            yield sse_step(
+                "Searching web...",
+                "running",
+                "🌐"
+            )
+
+            search_result = search_news.invoke(question)
+
+            yield sse_step(
+                "Searching web...",
+                "completed",
+                "✔️"
+            )
+
+            # yield sse_event("message", search_result)
+
+            formatted = llm.invoke(
+                f"""
+                Question:
+                {question}
+
+                Uploaded File:
+                {file_content}
+
+                Search Result:
+                {search_result}
+
+                Answer using both the uploaded file
+                and the search result if relevant.
+                """
+            )
+
+            yield sse_event(
+                "message",
+                formatted.content
+            )
+            
+            save_message(session_id, "assistant", answer)
+
+            return
+
+        # Create Graph Dynamically
+        # if selected_model=="groq":
+        #     graph = create_react_agent(llm, [], prompt=system_prompt)
+        # else:
+        #     graph = create_react_agent(llm, tools, prompt=system_prompt)
+        
+        graph = create_react_agent(llm, tools, prompt=system_prompt)
+        
+        
+        # graph = create_react_agent(llm, tools)
+        # graph = create_react_agent(llm, [])
 
 
         # STATUS EVENT
@@ -79,6 +287,7 @@ def run_agent_stream(question, session_id, selected_model):
 
         isAnalyzingCompleted = False
         isSearchingWeb = 0
+        isGeneratingStarted = False
 
         for message, metadata in graph.stream(
             {
@@ -97,12 +306,6 @@ def run_agent_stream(question, session_id, selected_model):
             # TOOL STATUS
             node = metadata.get("langgraph_node", "")
 
-            # print("META")
-            # print(metadata)
-            # print("MESSAGE")
-            # print(message)
-            # print("Node = " + node)
-
             # DETECT TOOL
             if hasattr(message, "tool_calls"):
 
@@ -119,7 +322,7 @@ def run_agent_stream(question, session_id, selected_model):
 
                     tool_name = tool_call.get("name", "")
 
-                    # print("TOOL =", tool_name)
+                    print("TOOL =", tool_name)
 
                     #region (Old code)
 
@@ -169,7 +372,7 @@ def run_agent_stream(question, session_id, selected_model):
                     # endregion
             
 
-            if node == "agent":
+            if node == "agent" and not isGeneratingStarted:
                 # TOOL COMPLETED → BACK TO AGENT
                 
                 yield sse_step(
@@ -177,6 +380,7 @@ def run_agent_stream(question, session_id, selected_model):
                     "running",
                     "✍️"
                 )
+                isGeneratingStarted = True
 
             if hasattr(message, "content"):
                 if (isSearchingWeb==1):
@@ -190,17 +394,19 @@ def run_agent_stream(question, session_id, selected_model):
                 content = message.content
 
                 # STRING CONTENT
-                if isinstance(content, str) and content.strip():
+                # if isinstance(content, str) and content.strip():
+                if isinstance(content, str):
 
                     content = message.content
 
-                    clean_content = content.strip()
+                    # clean_content = content.strip()
+                    clean_content = content
 
                     if clean_content:
 
-                        answer += clean_content+" "
+                        answer += clean_content
 
-                        yield sse_event("message", clean_content+" ")
+                        yield sse_event("message", clean_content)
 
 
                 # LIST CONTENT (Gemini sometimes returns list)
@@ -212,13 +418,14 @@ def run_agent_stream(question, session_id, selected_model):
 
                             text = item.get("text", "")
 
-                            clean_content = text.strip()
+                            # clean_content = text.strip()
+                            clean_content = text
 
                             if clean_content:
 
-                                answer += clean_content+" "
+                                answer += clean_content
 
-                                yield sse_event("message", clean_content+" ")
+                                yield sse_event("message", clean_content)
                         
 
         # DONE
@@ -229,21 +436,7 @@ def run_agent_stream(question, session_id, selected_model):
         traceback.print_exc()
         error_message = repr(e)
 
-        # print("****************")
-        # print(e)
-        # print("****************")
-        # print(error_message)
-        # print("****************")
-
-        # error_message = f"Error: {str(e)}"
-
         answer += error_message
-
-        # STREAM ERROR
-        # for word in error_message.split():
-        #     # print("STREAMING:", word)
-            
-        #     yield f"data: {word} \n\n"
 
         yield sse_event("error", error_message)
 
@@ -256,44 +449,7 @@ def run_agent_stream(question, session_id, selected_model):
     )
 
 
-def run_agent(question, session_id, selected_model):
-
-    # Create LLM Dynamically
-    llm = get_llm(selected_model)
-
-    # Create Graph Dynamically
-    graph = create_react_agent(llm, tools)
-
-    # SAVE USER MESSAGE
-    save_message(session_id, "user", question)
-
-    # GET OLD HISTORY
-    history = get_history(session_id)
-
-    # COMBINE HISTORY + NEW QUESTION
-    full_prompt = f"""
-    Conversation History:
-    {history}
-
-    User Question:
-    {question}
-    """
-
-    # AGENT CALL
-    try:
-        result = graph.invoke({
-            "messages": [
-                ("user", full_prompt)
-            ]
-        })
-
-        answer = result["messages"][-1].content
-    except Exception as e:
-        print(e)
-        answer = "AI service temporarily unavailable. Please try again later. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
-
-    # SAVE AI MESSAGE
-    save_message(session_id, "assistant", answer)
+    
 
     return answer
 

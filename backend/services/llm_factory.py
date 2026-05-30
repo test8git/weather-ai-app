@@ -57,7 +57,7 @@ def get_llm(provider):
                 "HTTP-Referer": os.getenv("FRONTEND_URL"),
                 "X-Title": "AI App"
             },
-            max_tokens=2000,
+            max_tokens=500,
             temperature=0.2,
             streaming=True
         )
@@ -69,7 +69,8 @@ def get_llm(provider):
             model=os.getenv("XAI_GROK_AI_MODAL"),
             api_key=os.getenv("XAI_API_KEY"),
             base_url="https://api.x.ai/v1",
-            temperature=0.2,
+            temperature=0,
+            max_tokens=1024,
             streaming=True
         )
 

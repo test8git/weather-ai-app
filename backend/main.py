@@ -1,10 +1,11 @@
+import os
+import uuid
 from database import init_db
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
-from graph.agent_graph import run_agent
 from graph.agent_graph import run_agent_stream
 
 import asyncio
@@ -31,29 +32,29 @@ class ChatRequest(BaseModel):
 
 
 @app.post("/chat")
-def chat(req: ChatRequest):
+async def chat(
+    question: str = Form(...),
+    session_id: str = Form(...),
+    selected_model: str = Form(...),
+    file: UploadFile | None = File(None)
+):
 
-    # async def generate():
-    #     answer = run_agent(
-    #         req.question,
-    #         req.session_id
-    #     )
+    file_path = None
+    UPLOAD_DIR = "uploads"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-    #     # STREAM CHARACTER BY CHARACTER
-    #     for char in answer:
-    #         yield char
-    #         await asyncio.sleep(0.02)
+    if file:
+        file_path = os.path.join(UPLOAD_DIR,  str(uuid.uuid4()) + "_" + file.filename)
 
-    # return StreamingResponse(
-    #     generate(),
-    #     media_type="text/plain"
-    # )
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
 
     async def generate():
         for chunk in run_agent_stream(
-            req.question,
-            req.session_id,
-            req.selected_model
+            question,
+            session_id,
+            selected_model,
+            file_path
         ):
 
             # SSE FORMAT
