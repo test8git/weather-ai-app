@@ -41,8 +41,14 @@ def read_file_content(file_path):
                 df = pd.read_excel(file_path)
                 file_content = df.to_string()
 
+            # Image
             elif extension in [".jpg", ".jpeg", ".png", ".webp"]:
                 file_type = "image"
+                file_content = file_path
+
+            # Audio file
+            elif extension in [".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac"]:
+                file_type = "audio"
                 file_content = file_path
 
             

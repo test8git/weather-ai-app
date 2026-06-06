@@ -75,6 +75,21 @@ def current_time(expression: str):
     from datetime import datetime
     return str(datetime.now())
 
+# # # @tool(description="Search the web")
+# # # def google_web_search(query):
+
+# # #     url = "https://www.googleapis.com/customsearch/v1"
+
+# # #     params = {
+# # #         "key": os.getenv("GOOGLE_API_KEY"),
+# # #         "cx": os.getenv("GOOGLE_CSE_ID"),
+# # #         "q": query
+# # #     }
+
+# # #     search_results = requests.get(url, params=params)
+
+# # #     return search_results
+
 @tool(description="Search the web for latest information")
 def search_news(query: str) -> str:
     
@@ -117,14 +132,13 @@ URL:
 
 
 
-@tool(description="Search latest news articles")
+@tool(description="Search the web")
 def search_web(query: str) -> str:
     
     try:
 
         response = tavily_client.search(
             query=query,
-            topic="news",
             search_depth="advanced",
             max_results=5
         )
@@ -135,9 +149,9 @@ def search_web(query: str) -> str:
 
             output.append(
                 f"""
+                Source: {r['url']}
                 Title: {r['title']}
-                Content: {r['content']}
-                URL: {r['url']}
+                Content: {r['content']}                
                 """
             )
 
@@ -151,19 +165,23 @@ def search_web(query: str) -> str:
 
 @tool(description="Search Wikipedia and return summary")
 def wikipedia_search(query: str) -> str:
-    
+
     try:
 
-        result = wikipedia.summary(
-            query,
+        results = wikipedia.search(query)
+
+        if not results:
+            return ""
+
+        page_title = results[0]
+
+        return wikipedia.summary(
+            page_title,
             sentences=3
         )
 
-        return result
-
-    except Exception as e:
-
-        return f"Wikipedia Error: {str(e)}"
+    except Exception:
+        return ""
 
 
   

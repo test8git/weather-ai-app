@@ -2,11 +2,13 @@ import os
 import uuid
 from database import init_db
 from fastapi import FastAPI, UploadFile, File, Form
+import tempfile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
 from graph.agent_graph import run_agent_stream
+from services.transcribe_service import transcribe_audio
 
 import asyncio
 
@@ -29,6 +31,32 @@ class ChatRequest(BaseModel):
     question: str
     session_id: str
     selected_model: str
+
+
+@app.post("/transcribe")
+async def transcribe(audio: UploadFile = File(...)):
+
+    tmp_file = tempfile.NamedTemporaryFile(delete=False)
+
+    try:
+
+        tmp_file.write(await audio.read())
+        tmp_file.close()
+
+        transcript = transcribe_audio(tmp_file.name)
+
+        print(tmp_file.name)
+
+        return {
+            "transcript": transcript
+        }
+
+    finally:
+
+        if os.path.exists(tmp_file.name):
+            os.remove(tmp_file.name)
+
+
 
 
 @app.post("/chat")

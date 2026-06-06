@@ -28,16 +28,48 @@ export default function ChatBox() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
   const session_id = "user-123";
 
   //let totalDuration = 0;
 
+
+  //Check for Clientside Speech supported
+  useEffect(() => {
+    setSpeechSupported(
+      !!(
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition
+      )
+    );
+  }, []);
+
   // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth"
+        behavior: "smooth"
     });
   }, [messages]);
+
+  //Drag event registration
+  useEffect(() => {
+
+      const handleDragEnd = () => {
+          setIsDragging(false);
+      };
+
+      window.addEventListener("dragend", handleDragEnd);
+
+      return () => {
+          window.removeEventListener("dragend", handleDragEnd);
+      };
+
+  }, []);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -53,29 +85,60 @@ export default function ChatBox() {
     }
   };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+
+    setIsDragging(false);
+
+    if (e.dataTransfer.files.length > 0) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+     e.preventDefault();
+
+    if (!isDragging) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const isAudioFile = (file) => {
+    return file?.type?.startsWith("audio/");
+  };
+
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const askAI = async () => {
-
-    setIsLoadingLocal(true);
+  const askAI = async (voiceQuestion = null) => {
+    
     try 
     {
-        // if (!city.trim()) {
-        //     alert("Please enter city");
-        //     return;
-        // }
+        const actualQuestion = voiceQuestion || question;
+
         if (!selectedModel.trim()) {
             alert("Please select AI modal");
             return;
         }
-        if (!question.trim()) {
+        if (!actualQuestion || !String(actualQuestion).trim()) {
             alert("Please enter your question");
             return;
         }
 
+        setIsLoadingLocal(true);
+
         const userMessage = {
           role: "user",
-          content: question
+          content: actualQuestion
         };
 
         setMessages((prev) => [...prev, userMessage]);
@@ -86,7 +149,7 @@ export default function ChatBox() {
 
         const formData = new FormData();
 
-        formData.append("question", question);
+        formData.append("question", actualQuestion);
         formData.append("session_id", session_id);
         formData.append("selected_model", selectedModel);
 
@@ -266,16 +329,16 @@ export default function ChatBox() {
         }
 
         
-
-        // setQuestion("");
+        //document.getElementById("txtQuestion").value = "";
+        //setQuestion("");
 
         // setAnswer(_answer);
 
-        // speakText(_answer);
+        speakText(aiMessage.content);
     }
     catch(error)
     {
-      //console.error(error);
+      console.error(error);
 
       setMessages((prev) => [
         ...prev,
@@ -309,16 +372,22 @@ export default function ChatBox() {
     const recognition = new SpeechRecognition();
 
     recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = false;
 
     recognition.onresult = (event) => {
 
         const transcript = event.results[0][0].transcript;
 
-        //console.log(transcript);
+        console.log(transcript);
 
         setQuestion(transcript);
 
         askAI(transcript);
+    };
+
+    recognition.onerror = (event) => {
+        console.log("Speech Error:", event.error);
     };
 
     recognition.start();
@@ -331,7 +400,114 @@ export default function ChatBox() {
 
     speech.lang = "en-US";
 
+    speech.onstart = () => setIsSpeaking(true);
+    speech.onend = () => setIsSpeaking(false);
+    speech.onerror = () => setIsSpeaking(false);
+
     window.speechSynthesis.speak(speech);
+  };
+
+  const stopSpeaking = () => {
+
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  const startRecording = async () => {
+
+    try {
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+      const mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorderRef.current = mediaRecorder;
+
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+
+        const audioBlob = new Blob(
+          audioChunksRef.current,
+          {
+            type: "audio/webm"
+          }
+        );
+
+        await uploadAudio(audioBlob);
+
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+
+      setIsRecording(true);
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert("Microphone permission denied");
+    }
+  };
+
+  const stopRecording = () => {
+
+    if (mediaRecorderRef.current) {
+
+      mediaRecorderRef.current.stop();
+
+      setIsRecording(false);
+    }
+  };
+
+  const uploadAudio = async (audioBlob) => {
+
+    try {
+
+      setGlobalLoading(true);
+
+      const formData = new FormData();
+
+      formData.append(
+        "audio",
+        audioBlob,
+        "speech.webm"
+      );
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/transcribe`,
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      const data = await response.json();
+
+      const transcript = data.transcript;
+
+      setGlobalLoading(false);
+
+      setQuestion(transcript);
+
+      askAI(transcript);
+
+    } catch (err) {
+      setGlobalLoading(false);
+      console.error(err);
+
+      alert("Failed to transcribe audio");
+    }
   };
 
   // ✅ CALCULATE HERE
@@ -367,19 +543,6 @@ export default function ChatBox() {
                             : "bg-white/90 backdrop-blur-md border border-gray-100 border-gray-200 text-black inline-block px-5 py-4 rounded-3xl w-full shadow-sm text-[15px] leading-7"
                         }
                     >
-                      {/* <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                pre: ({ children }) => (
-                                  <pre className="whitespace-pre-wrap overflow-x-auto bg-gray-900 text-white p-4 rounded-xl text-sm my-3">
-                                    {children}
-                                  </pre>
-                                )
-                              }}
-                            >
-                        {msg.content}
-                      </ReactMarkdown> */}
-
                       <div className="prose prose-lg max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}
                                       components={{
@@ -399,9 +562,9 @@ export default function ChatBox() {
                                               </h3>
                                           ),
                                           p: ({ children }) => (
-                                              <p className="leading-8 text-[15px] text-gray-800 mb-1">
-                                                  {children}
-                                              </p>
+                                              <div className="leading-8 text-[15px] text-gray-800 mb-3">
+                                                {children}
+                                              </div>
                                           ),
                                           ul: ({ children }) => (
                                               <ul className="list-disc ml-6 mb-4 space-y-2">
@@ -472,17 +635,24 @@ export default function ChatBox() {
                                               if(!inline && match)
                                               {
                                                 return (
-                                                  <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div"
-                                                      customStyle={{
-                                                          borderRadius: "16px",
-                                                          padding: "20px",
-                                                          fontSize: "14px",
-                                                          marginTop: "20px",
-                                                          marginBottom: "20px"
-                                                      }}
-                                                  >
-                                                      {text}
-                                                  </SyntaxHighlighter>
+                                                  <div className="relative">
+                                                      <button className="absolute right-3 top-3 text-xs"
+                                                        onClick={() => navigator.clipboard.writeText(text)}>
+                                                        📋 Copy
+                                                      </button>
+
+                                                      <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div"
+                                                          customStyle={{
+                                                              borderRadius: "16px",
+                                                              padding: "20px",
+                                                              fontSize: "14px",
+                                                              marginTop: "20px",
+                                                              marginBottom: "20px"
+                                                          }}
+                                                      >
+                                                          {text}
+                                                      </SyntaxHighlighter>
+                                                  </div>
                                                 );
                                               }
 
@@ -494,9 +664,9 @@ export default function ChatBox() {
                                               if (inline) {
 
                                                   return (
-                                                      <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm">
-                                                          {children}
-                                                      </code>
+                                                    <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm">
+                                                      {children}
+                                                    </code>
                                                   );
                                               }
 
@@ -506,19 +676,20 @@ export default function ChatBox() {
                                               -----------------------------
                                               */
                                               
-                                              return (
-                                                  <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
-                                                      <code>
-                                                          {children}
-                                                      </code>
-                                                  </pre>
-                                              );
+                                              // return (
+                                              //     <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
+                                              //         <code>
+                                              //             {children}
+                                              //         </code>
+                                              //     </pre>
+                                              // );
 
                                               return (
-                                                  <code>
-                                                      {children}
-                                                  </code>
+                                                <code className={className}>
+                                                  {children}
+                                                </code>
                                               );
+
                                           },
 
                                           // pre: ({ children }) => (
@@ -526,6 +697,11 @@ export default function ChatBox() {
                                           //         {children}
                                           //     </pre>
                                           // ),
+                                          pre: ({ children }) => (
+                                            <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
+                                              {children}
+                                            </pre>
+                                          ),
                                           table: ({ children }) => (
                                               <div className="overflow-x-auto my-6">
                                                   <table className="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm">
@@ -600,53 +776,209 @@ export default function ChatBox() {
       )}
       
       <div className="border-t bg-white p-4">
-        <div className="flex gap-3 items-end">
-          <select className="border rounded-2xl px-4 py-3 bg-white" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
-              <option value="">Select AI Modal</option>
-              <option value="gemini">Gemini</option>
-              <option value="openai">OpenAI</option>
-              <option value="claude">Claude</option>
-              <option value="grok">Grok</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="groq">Groq</option>
-            </select>
 
-          <div className="relative flex items-center w-full">
-            <button type="button" onClick={() => fileInputRef.current.click()} title="Upload file..." 
-                    className="absolute left-3 text-gray-500 hover:text-gray-700 cursor-pointer"><PaperClipIcon className="w-5 h-5 cursor-pointer" /></button>
-            <input type="file" ref={fileInputRef} className="hidden"
-                onChange={(e) => {
-                    if (e.target.files?.length) {
-                        setSelectedFile(e.target.files[0]);
-                    }
-                }}
+  {/* FILE PREVIEW */}
+  {selectedFile && (
+    <div className="mb-3">
+
+      {selectedFile.type.startsWith("image/") ? (
+        <div className="relative inline-block">
+
+          <img
+            src={URL.createObjectURL(selectedFile)}
+            alt="Preview"
+            className="w-24 h-24 object-cover rounded-xl border"
+          />
+
+          <button
+            onClick={() => setSelectedFile(null)}
+            className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 text-red-500 hover:text-red-700"
+          >
+            ✕
+          </button>
+
+        </div>
+      ) : (isAudioFile(selectedFile) ? (
+          <div className="bg-gray-100 rounded-xl p-3">
+            <div className="font-medium mb-2">
+              🎵 {selectedFile.name}
+            </div>
+
+            <audio
+              controls
+              className="w-full"
+              src={URL.createObjectURL(selectedFile)}
             />
-            <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask anything..." className="w-full pl-12 pr-4 py-3 border rounded-2xl" />
+            <button onClick={() => setSelectedFile(null)} className="text-red-500 hover:text-red-700">✕</button>
           </div>
-          {
-            selectedFile && (
-              <>
-              <div className="text-sm text-gray-500">
+          
+          ) : (
+
+        <div className="flex items-center justify-between bg-gray-100 rounded-xl px-4 py-3">
+
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📄</span>
+
+            <div>
+              <div className="font-medium text-sm">
                 {selectedFile.name}
               </div>
-              <button onClick={() => setSelectedFile(null)}>
-                ❌
-              </button>
-              </>
-            )
-          }
-        
-          {/* <button onClick={startListening} className="bg-blue-600 text-white px-5 py-3 rounded-xl">🎤 Speak</button> */}
+
+              {/* <div className="text-xs text-gray-500">
+                {(selectedFile.size / 1024).toFixed(1)} KB
+              </div> */}
+            </div>
+          </div>
+
           <button
-          disabled={isLoadingLocal}
-          onClick={() => askAI()} className="bg-black text-white rounded-2xl px-5 py-3 flex items-center gap-2 hover:opacity-90 transition">
-            {isLoadingLocal && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
-            )}
-            <span>{isLoadingLocal ? "Thinking..." : "Ask"}</span>
+            onClick={() => setSelectedFile(null)}
+            className="text-red-500 hover:text-red-700"
+          >
+            ✕
           </button>
+
         </div>
+      ))}
+    </div>
+  )}
+
+  {/* CHAT INPUT AREA */}
+  <div
+    onDrop={handleDrop}
+    onDragOver={handleDragOver}
+    className={`
+      relative
+      border
+      rounded-3xl
+      p-3
+      transition-all
+      duration-200
+      ${
+        isDragging
+          ? "border-blue-500 bg-blue-50"
+          : "border-gray-300"
+      }
+    `}
+  >
+
+    {/* DRAG OVERLAY */}
+    {isDragging && (
+      <div className="absolute inset-0 z-20 bg-blue-50 border-2 border-dashed border-blue-500 rounded-3xl flex flex-col items-center justify-center">
+
+        <div className="text-5xl mb-2">
+          📂
+        </div>
+
+        <div className="font-semibold">
+          Drop file here
+        </div>
+
+        <div className="text-sm text-gray-500">
+          PDF, Word, Excel, Images, Text
+        </div>
+
       </div>
+    )}
+
+    <div className="flex items-end gap-3">
+
+      {/* MODEL */}
+      <select
+        className="border rounded-2xl px-3 py-2 bg-white"
+        value={selectedModel}
+        onChange={(e) => setSelectedModel(e.target.value)}
+      >
+        <option value="">Model</option>
+        <option value="gemini">Gemini</option>
+        <option value="openai">OpenAI</option>
+        <option value="claude">Claude</option>
+        <option value="grok">Grok</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="groq">Groq</option>
+      </select>
+
+      {/* TEXTAREA */}
+      <div className="flex-1 relative">
+
+        <input type="text" id="txtQuestion" name="txtQuestion"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Message AI Assistant..."
+          className="w-full resize-none outline-none px-10 py-2"
+        />
+
+        {/* ATTACH BUTTON */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current.click()}
+          className="absolute left-2 bottom-3 text-gray-500 hover:text-black"
+        >
+          <PaperClipIcon className="w-5 h-5 cursor-pointer" />
+        </button>
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          hidden
+          onChange={(e) => {
+            if (e.target.files?.length) {
+              setSelectedFile(e.target.files[0]);
+            }
+          }}
+        />
+
+      </div>
+
+      {/* SEND */}
+      {/* <button onClick={isRecording ? stopRecording : startRecording }
+              className={`rounded-full w-12 h-12 flex items-center justify-center ${
+                          isRecording
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200"
+                        }`}
+      >{isRecording ? "⏹" : "🎤"}</button>
+
+      <button onClick={startListening} className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">🎤</button>
+
+       */}
+
+      {speechSupported ? (
+        <button onClick={startListening} className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90"
+          title="Speak">🎤</button>
+      ) : (
+        <button onClick={isRecording ? stopRecording : startRecording }
+              className={`rounded-full w-12 h-12 flex items-center justify-center ${
+                          isRecording
+                            ? "bg-red-500 text-white"
+                            : "bg-gray-200"
+                        }`}
+      >{isRecording ? "⏹" : "🎤"}</button>
+      )}
+      
+      {isSpeaking && (
+      <button
+        onClick={stopSpeaking} title="Stop Speaking"
+        className="bg-red-500 text-white rounded-full w-12 h-12"
+      >
+        ⏹
+      </button>
+      )}
+      
+      <button
+        disabled={isLoadingLocal}
+        onClick={() => askAI()}
+        className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90"
+      >
+        {isLoadingLocal ? (
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          "➤"
+        )}
+      </button>
+
+    </div>
+  </div>
+</div>
     </div>
   );
 }
