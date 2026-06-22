@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useLoading } from "@/context/LoadingContext"
 import ChatBox from "@/components/ChatBox";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Sidebar from "@/components/Sidebar";
 
 
 export default function Home() {
@@ -11,22 +13,20 @@ export default function Home() {
   const [error, setError] = useState("");
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-3xl shadow-xl p-4 md:p-8">
-            {error && (
-              <div>
-                <p className="text-red-500 mt-4">
-                  {error}
-                </p>
-              </div>
-            )}
-          
-          <div>            
-            <ChatBox />
-          </div>
+    <ProtectedRoute>
+      <div className="flex h-screen">
+        {/* <Sidebar /> */}
+        <div className="flex-1 bg-slate-100 p-4">
+          {error && (
+            <div className="mb-3">
+              <p className="text-red-500">
+                {error}
+              </p>
+            </div>
+          )}
+          <ChatBox />
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

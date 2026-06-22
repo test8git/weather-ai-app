@@ -9,6 +9,9 @@ from tools.multi_tool import search_web, get_weather, calculate_expression, curr
 from tools.memory_tool import save_message, get_history
 from tools.file_tool import read_file_content
 from services.transcribe_service import transcribe_audio
+from services.image_service import analyze_image
+import subprocess
+import cv2
 
 import json
 
@@ -73,7 +76,9 @@ def should_search(question):
     return any(keyword in q for keyword in SEARCH_KEYWORDS)
 
 
-def run_agent_stream(question, session_id, selected_model, file_path=None):
+def run_agent_stream(question, session_id, selected_model, file_path=None, content_type=None):
+
+    print("Calling : run_agent_stream")
 
     yield sse_step(
         "Thinking...",
@@ -121,7 +126,7 @@ TOOL USAGE RULES:
 Always provide clean, concise, user-friendly responses.
 
 """
-
+    
     # SAVE USER MESSAGE
     save_message(session_id, "user", question)
 
@@ -130,7 +135,9 @@ Always provide clean, concise, user-friendly responses.
     # GET OLD HISTORY
     history = get_history(session_id)
 
-    file_data = read_file_content(file_path)
+    file_data = read_file_content(file_path, content_type, llm)
+
+    print(file_data)
 
     file_prompt = ""
 
@@ -147,29 +154,11 @@ Always provide clean, concise, user-friendly responses.
                 "running",
                 "🖼️"
             )
-            with open(file_data["content"], "rb") as f:
-                image_data = base64.b64encode(f.read()).decode()
 
-            mime_type, _ = mimetypes.guess_type(file_data["content"])
+            imageResult = analyze_image(file_data["content"], llm, question)
 
-            response = llm.invoke(
-                [
-                    HumanMessage(
-                        content=[
-                            {
-                                "type": "text",
-                                "text": question
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": f"data:{mime_type};base64,{image_data}"
-                            }
-                        ]
-                    )
-                ]
-            )
 
-            answer+=response.content
+            answer+=imageResult
 
             yield sse_step(
                 "Analyzing image...",
@@ -179,7 +168,7 @@ Always provide clean, concise, user-friendly responses.
 
             yield sse_event(
                 "message",
-                response.content
+                imageResult
             )
 
             save_message(session_id, "assistant", answer)
@@ -198,11 +187,64 @@ Always provide clean, concise, user-friendly responses.
     else:
 
         fileContent = ""
+        frame_analysis = []
 
         # Audio file
         if file_data["type"] == "audio":
             transcript = transcribe_audio(file_data["content"])
             file_data["content"] = transcript
+        
+        # Video file
+        if file_data["type"] == "video":
+            video_path = file_data["content"]
+            audio_path = video_path + ".mp3"
+
+            subprocess.run([
+                "ffmpeg",
+                "-i", video_path,
+                "-q:a", "0",
+                "-map", "a",
+                audio_path
+            ])
+
+            transcript = transcribe_audio(audio_path)
+            file_data["content"] = transcript
+
+            video = cv2.VideoCapture(video_path)
+
+            frames = []
+
+            count = 0
+
+            while True:
+
+                success, frame = video.read()
+
+                if not success:
+                    break
+
+                if count % 150 == 0:
+
+                    frame_path = f"frame_{count}.jpg"
+
+                    cv2.imwrite(frame_path, frame)
+
+                    frames.append(frame_path)
+
+                count += 1
+
+            video.release()
+
+
+            for frame in frames:
+
+                result = analyze_image(frame, llm, "Describe this image in detail.")
+
+                frame_analysis.append(result)
+
+        # print("*********************")
+        # print(file_data["content"])
+
 
         if file_data["content"]:
             file_prompt = f"""
@@ -219,10 +261,23 @@ Always provide clean, concise, user-friendly responses.
             Respond appropriately.
             """
 
-            fileContent = f"""
-                Uploaded File:
-                {file_data["content"]}
-                """
+            if file_data["type"] == "video":
+                fileContent = f"""
+                    Video Transcript:
+
+                    {file_data["content"]}
+
+                    Frame Analysis:
+
+                    {frame_analysis}
+
+                    Create a summary of this video.
+                    """  
+            else:
+                fileContent = f"""
+                    Uploaded File:
+                    {file_data["content"]}
+                    """
 
         # COMBINE HISTORY + NEW QUESTION
         full_prompt = f"""

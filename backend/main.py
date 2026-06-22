@@ -67,12 +67,25 @@ async def chat(
     file: UploadFile | None = File(None)
 ):
 
+    content_type = None
     file_path = None
     UPLOAD_DIR = "uploads"
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+    try:
+        for filename in os.listdir(UPLOAD_DIR):
+            file_path = os.path.join(UPLOAD_DIR, filename)
+
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+    except Exception as e:
+        pass
+
+
     if file:
         file_path = os.path.join(UPLOAD_DIR,  str(uuid.uuid4()) + "_" + file.filename)
+        content_type = file.content_type
 
         with open(file_path, "wb") as f:
             f.write(await file.read())
@@ -82,7 +95,8 @@ async def chat(
             question,
             session_id,
             selected_model,
-            file_path
+            file_path,
+            content_type
         ):
 
             # SSE FORMAT

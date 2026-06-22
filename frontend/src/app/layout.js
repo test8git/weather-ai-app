@@ -1,6 +1,8 @@
+import { AuthProvider } from "@/context/AuthProvider";
 import { LoadingProvider } from "@/context/LoadingContext"
 import GlobalLoader from "@/components/GlobalLoader"
 import { Geist, Geist_Mono } from "next/font/google";
+import { ConversationProvider} from "@/context/ConversationProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Weather AI",
-  description: "AI Weather Assistant",
+  title: "General AI Assistant",
+  description: "General AI Assistant",
   manifest: "/manifest.json",
 };
 
@@ -25,7 +27,16 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col"><LoadingProvider><GlobalLoader />{children}</LoadingProvider></body>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider>
+          <ConversationProvider>
+            <LoadingProvider>
+              <GlobalLoader />
+              {children}
+            </LoadingProvider>
+          </ConversationProvider>
+        </AuthProvider>
+      </body>
     </html>
   );
 }
