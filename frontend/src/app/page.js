@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <ProtectedRoute>
       <div className="flex h-screen">
-        {/* <Sidebar /> */}
+        <Sidebar />
         <div className="flex-1 bg-slate-100 p-4">
           {error && (
             <div className="mb-3">

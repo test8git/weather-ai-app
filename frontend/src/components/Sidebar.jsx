@@ -6,7 +6,18 @@ import { supabase } from "@/lib/supabase";
 import { useConversation } from "@/context/ConversationProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { useLoading } from "@/context/LoadingContext"
-import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
+
+import jsPDF from "jspdf";
+
+import { EllipsisVerticalIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { StarIcon } from "@heroicons/react/24/solid";
+
+import dayjs from "dayjs";
+import isToday from "dayjs/plugin/isToday";
+import isYesterday from "dayjs/plugin/isYesterday";
+
+dayjs.extend(isToday);
+dayjs.extend(isYesterday);
 
 export default function Sidebar() {
     const { setGlobalLoading } = useLoading();
@@ -15,10 +26,14 @@ export default function Sidebar() {
     
     const [menuOpenId, setMenuOpenId] = useState(null);
 
-    const [editingId, setEditingId] = useState(null);
-    const [editingTitle, setEditingTitle] = useState("");
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [conversationToDelete, setConversationToDelete] = useState(null);
+
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [selectedConversation, setSelectedConversation] = useState(null);
+    const [exportType, setExportType] = useState("pdf");
 
     const menuRef = useRef(null);
 
@@ -56,16 +71,18 @@ export default function Sidebar() {
 
     }, []);
 
+    //Load recent Conversations
     const loadConversations = async () =>
     {
         try
         {
-            setGlobalLoading(true);
+            //setGlobalLoading(true);
             const { data, error } =
                 await supabase
                     .from("conversations")
                     .select("*")
                     .eq("user_id", user.id)
+                    .eq("is_archived", false)
                     .order(
                         "created_at",
                         {
@@ -83,10 +100,11 @@ export default function Sidebar() {
         }
         finally
         {
-            setGlobalLoading(false);
+            //setGlobalLoading(false);
         }
     };
 
+    //Click on "+ New Chat " button
     const createNewChat = async () =>
     {
         setConversationId(null);
@@ -98,6 +116,7 @@ export default function Sidebar() {
         );
     };
 
+    //Delete recent conversation
     const deleteConversation = async (id) =>
     {
         // const confirmed = window.confirm(
@@ -138,6 +157,7 @@ export default function Sidebar() {
         }
     };
 
+    //Rename Conversation
     const renameConversation = async (id, currentTitle) =>
     {
         const newTitle =
@@ -174,6 +194,211 @@ export default function Sidebar() {
         }
     };
 
+    //Add to Archive
+    const archiveConversation = async (id) =>
+    {
+        try
+        {
+            setGlobalLoading(true);
+            const { error } =
+                await supabase
+                    .from("conversations")
+                    .update({
+                        is_archived: true
+                    })
+                    .eq("id", id);
+
+            if (error)
+            {
+                console.error(error);
+                return;
+            }
+
+            // Clear chat if current conversation archived
+            if (conversationId === id)
+            {
+                setConversationId(null);
+                setMessages([]);
+            }
+
+            loadConversations();
+        }
+        finally
+        {
+            setGlobalLoading(false);
+        }
+    };
+
+    //Export Conversation
+    const exportConversation = async (conversationId, type) =>
+    {
+        const { data: messages } =
+            await supabase
+                .from("messages")
+                .select("*")
+                .eq("conversation_id", conversationId)
+                .order(
+                    "created_at",
+                    {
+                        ascending: true
+                    }
+                );
+
+        if (!messages)
+            return;
+
+        switch(type)
+        {
+            case "txt":
+                exportTXT(messages);
+                break;
+
+            case "md":
+                exportMarkdown(messages);
+                break;
+
+            case "pdf":
+                exportPDF(messages);
+                break;
+        }
+    };
+
+    const exportTXT = (messages) => {
+
+        let text = "";
+
+        messages.forEach(msg => {
+
+            text += `${msg.role.toUpperCase()}:\n`;
+            text += `${msg.content}\n\n`;
+
+        });
+
+        const blob =
+            new Blob(
+                [text],
+                {
+                    type: "text/plain"
+                }
+            );
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const a =
+            document.createElement("a");
+
+        a.href = url;
+
+        a.download = "conversation.txt";
+
+        a.click();
+
+    };
+
+    const exportMarkdown = (messages) => {
+
+        let markdown = "";
+
+        messages.forEach(msg => {
+
+            markdown +=
+                `## ${msg.role}\n\n`;
+
+            markdown +=
+                `${msg.content}\n\n`;
+
+        });
+
+        const blob =
+            new Blob(
+                [markdown],
+                {
+                    type: "text/markdown"
+                }
+            );
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const a =
+            document.createElement("a");
+
+        a.href = url;
+
+        a.download = "conversation.md";
+
+        a.click();
+
+    };
+
+    const exportPDF = (messages) => {
+
+        const doc = new jsPDF();
+
+        let y = 20;
+
+        messages.forEach(msg => {
+
+            doc.setFontSize(12);
+
+            doc.text(
+                `${msg.role.toUpperCase()}:`,
+                10,
+                y
+            );
+
+            y += 8;
+
+            const lines =
+                doc.splitTextToSize(
+                    msg.content,
+                    180
+                );
+
+            doc.text(
+                lines,
+                10,
+                y
+            );
+
+            y += lines.length * 8 + 10;
+
+        });
+
+        doc.save(
+            "conversation.pdf"
+        );
+
+    };
+
+    //Add to Favourite
+    const favoriteConversation = async (id, value) =>
+    {
+        try
+        {
+            setGlobalLoading(true);
+            const { error } =
+                await supabase
+                    .from("conversations")
+                    .update({
+                        is_favorite: value
+                    })
+                    .eq("id", id);
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            loadConversations();
+        }
+        finally{
+            setGlobalLoading(false);
+        }
+    };
+
+    //Open clicked conversation in Chat window
     const openConversation = async (conversationId) =>
     {
         try
@@ -194,6 +419,105 @@ export default function Sidebar() {
         router.push("/login");
     };
 
+    const favoriteConversations =
+        conversations.filter(
+            c => c.is_favorite
+        );
+
+    const normalConversations =
+        conversations.filter(
+            c => !c.is_favorite
+        );
+
+    //Filter conversations (search by conversation Title)
+    const filteredConversations =
+        normalConversations.filter(conv =>
+            conv.title
+                ?.toLowerCase()
+                .includes(
+                    searchTerm.toLowerCase()
+                )
+        );
+
+    //Group Conversations (Today, Yesterday, Previous 7 Days, Older)
+    const groupConversations = () => {
+
+        const groups = {
+            today: [],
+            yesterday: [],
+            previous7Days: [],
+            older: []
+        };
+
+        filteredConversations.forEach(conv => {
+
+            const date =
+                dayjs(
+                    conv.created_at
+                );
+
+            if (date.isToday())
+            {
+                groups.today.push(conv);
+            }
+            else if (date.isYesterday())
+            {
+                groups.yesterday.push(conv);
+            }
+            else if (
+                dayjs().diff(
+                    date,
+                    "day"
+                ) <= 7
+            )
+            {
+                groups.previous7Days.push(conv);
+            }
+            else
+            {
+                groups.older.push(conv);
+            }
+
+        });
+
+        return groups;
+    };
+
+    const grouped = groupConversations();
+
+    const shareConversation = async (conversationId) => {
+        try
+        {
+            setGlobalLoading(true);
+            const { data, error } =
+                await supabase
+                    .from("shared_conversations")
+                    .insert([
+                        {
+                            conversation_id: conversationId,
+                            user_id: user.id
+                        }
+                    ])
+                    .select()
+                    .single();
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const url =
+                `${window.location.origin}/share/${data.id}`;
+
+            await navigator.clipboard.writeText(url);
+
+            alert("Link copied!");
+        }
+        finally{
+            setGlobalLoading(false);
+        }
+    };
+
     return (
 
         <div className="w-72 bg-slate-900 text-white flex flex-col">
@@ -210,89 +534,284 @@ export default function Sidebar() {
             {/* New Chat */}
             <div className="p-4">
 
-                <button onClick={createNewChat} className="w-full bg-slate-800 hover:bg-slate-700 rounded-xl py-3">
+                <button onClick={createNewChat} className="cursor-pointer text-left px-2 w-full bg-slate-800 hover:bg-slate-700 rounded-xl py-2">
                     + New Chat
                 </button>
             </div>
 
+            {/* Search */}
+            {/* <div className="px-4 pb-4 relative">
+                <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 absolute left-7 top-3" />
+                <input type="text" placeholder="Search chats" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)}
+                    className="w-full bg-slate-800 text-white rounded-xl pl-10 pr-4 py-2 border border-slate-700 focus:border-slate-500 outline-none" />
+            </div> */}
+
             {/* History */}
             <div className="flex-1 px-4 overflow-y-auto">
+
+                {
+                    favoriteConversations.length > 0 && (
+
+                        <div className="mb-6">
+
+                            <div className="text-xs text-slate-400 mb-2 uppercase">
+                                Favorites
+                            </div>
+
+                            <div className="space-y-2-noUse">
+
+                                {favoriteConversations.map(conv => (
+
+                                    <div
+                                        key={conv.id}
+                                        className={`group relative flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer
+                                            ${
+                                                conversationId === conv.id
+                                                ? "bg-slate-700"
+                                                : "hover:bg-slate-800"
+                                            }`}
+                                    >
+
+                                        <div className="flex-1 truncate"
+                                            onClick={() => openConversation(conv.id)}
+                                        >
+                                            ⭐ <span>{conv.title}</span>
+                                        </div>
+
+                                        {/* Three Dot Menu */}
+                                            <button onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
+                                                }}
+                                                className={`cursor-pointer px-2 ${menuOpenId === conv.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                                                    <EllipsisVerticalIcon className="w-5 h-5" />
+                                            </button>
+
+                                            {/* Popup Menu */}
+                                            {menuOpenId === conv.id && (
+                                                <div ref={menuOpenId === conv.id ? menuRef : null} 
+                                                    className="absolute right-2 top-10 z-50 bg-white border rounded-xl shadow-lg w-36">
+
+                                                    <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                        onClick={() => {
+                                                            setMenuOpenId(null);
+                                                            renameConversation(conv.id, conv.title);
+                                                        }}
+                                                    >
+                                                        ✏️ Rename
+                                                    </button>
+                                                    
+                                                    <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                        onClick={() => {
+                                                            setMenuOpenId(null);
+                                                            favoriteConversation(
+                                                                conv.id,
+                                                                !conv.is_favorite
+                                                            );
+                                                        }}
+                                                    >
+                                                        {
+                                                            conv.is_favorite
+                                                            ? "⭐ Unpin"
+                                                            : "⭐ Pin"
+                                                        }
+                                                    </button>
+
+                                                    <button className="cursor-pointer block w-full text-left p-1 text-blue-500 hover:bg-gray-100"
+                                                        onClick={() => {
+                                                            setMenuOpenId(null);
+                                                            setSelectedConversation(conv);
+                                                            setShowExportModal(true);
+                                                        }}
+                                                    >
+                                                        📤 Export
+                                                    </button>
+
+                                                    <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                        onClick={() => {
+                                                            setMenuOpenId(null);
+                                                            shareConversation(conv.id);
+                                                        }}
+                                                    >
+                                                        🔗 Share
+                                                    </button>
+
+                                                    <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                        onClick={() => {
+                                                            setMenuOpenId(null);
+                                                            archiveConversation(conv.id);
+                                                        }}
+                                                    >
+                                                        📦 Archive
+                                                    </button>
+
+                                                    <button className="cursor-pointer block w-full text-left p-1 text-red-500"
+                                                        onClick={() => {
+                                                            setMenuOpenId(null);
+                                                            setConversationToDelete(conv.id);
+                                                            setDeleteModalOpen(true);
+                                                        }}
+                                                    >
+                                                        🗑 Delete
+                                                    </button>
+
+                                                </div>
+                                            )}
+
+                                    </div>
+
+                                ))}
+
+                            </div>
+
+                        </div>
+
+                    )
+                }
 
                 <div className="text-sm text-slate-400 mb-3">
                     Recent Chats
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2-noUse">
+                    {
+                        [
+                            {
+                                title: "Today",
+                                items: grouped.today
+                            },
+                            {
+                                title: "Yesterday",
+                                items: grouped.yesterday
+                            },
+                            {
+                                title: "Previous 7 Days",
+                                items: grouped.previous7Days
+                            },
+                            {
+                                title: "Older",
+                                items: grouped.older
+                            }
+                        ].map(section => (
 
-                    {conversations.map((conv) => (
-                        <div key={conv.id} className={`group relative flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer
-                                    ${conversationId === conv.id ? "bg-slate-700" : "hover:bg-slate-800" } `}>
-                            {/* Conversation Title */}
-                            <div className="flex-1 truncate" onClick={() => openConversation(conv.id)}>
-                                {conv.title}
-                            </div>
-                            
-                            {/* Three Dot Menu */}
-                            <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
-                                }}
-                                className={`cursor-pointer px-2 ${menuOpenId === conv.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                                    <EllipsisVerticalIcon className="w-5 h-5" />
-                            </button>
+                            section.items.length > 0 && (
 
-                            {/* Popup Menu */}
-                            {menuOpenId === conv.id && (
-                                <div ref={menuOpenId === conv.id ? menuRef : null} 
-                                     className="absolute right-2 top-10 z-50 bg-white border rounded-xl shadow-lg w-36">
+                                <div key={section.title} className="mb-6">
+                                    <div className="text-xs text-slate-400 mb-2 uppercase">
+                                        {section.title}
+                                    </div>
 
-                                    <button
-                                        className="cursor-pointer block w-full text-left p-1 text-blue-500"
-                                        onClick={() => {
-                                            setMenuOpenId(null);
-                                            renameConversation(conv.id, conv.title);
-                                        }}
-                                    >
-                                        ✏️ Rename
-                                    </button>
+                                    <div className="space-y-2-noUse">
+                                        {section.items.map(conv => (
 
-                                    <button
-                                        className="cursor-pointer block w-full text-left p-1 text-red-500"
-                                        onClick={() => {
-                                            setMenuOpenId(null);
-                                            setConversationToDelete(conv.id);
-                                            setDeleteModalOpen(true);
-                                        }}
-                                    >
-                                        🗑 Delete
-                                    </button>
+                                            <div key={conv.id} className={`group relative flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer
+                                                        ${conversationId === conv.id ? "bg-slate-700" : "hover:bg-slate-800" } `}>
+                                                {/* Conversation Title */}
+                                                <div className="flex-1 truncate" onClick={() => openConversation(conv.id)}>
+                                                    {conv.title}
+                                                </div>
+                                                
+                                                {/* Three Dot Menu */}
+                                                {/* <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
+                                                    }}
+                                                    className={`cursor-pointer px-2 ${menuOpenId === conv.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                                                        <EllipsisVerticalIcon className="w-5 h-5" />
+                                                </button> */}
+
+                                                {/* Popup Menu */}
+                                                {menuOpenId === conv.id && (
+                                                    <div ref={menuOpenId === conv.id ? menuRef : null} 
+                                                        className="absolute right-2 top-10 z-50 bg-white border rounded-xl shadow-lg w-36">
+
+                                                        <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                            onClick={() => {
+                                                                setMenuOpenId(null);
+                                                                renameConversation(conv.id, conv.title);
+                                                            }}
+                                                        >
+                                                            ✏️ Rename
+                                                        </button>
+                                                        
+                                                        <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                            onClick={() => {
+                                                                setMenuOpenId(null);
+                                                                favoriteConversation(
+                                                                    conv.id,
+                                                                    !conv.is_favorite
+                                                                );
+                                                            }}
+                                                        >
+                                                            {
+                                                                conv.is_favorite
+                                                                ? "⭐ Unpin"
+                                                                : "⭐ Pin"
+                                                            }
+                                                        </button>
+                                                            
+                                                        <button className="cursor-pointer block w-full text-left p-1 text-blue-500 hover:bg-gray-100"
+                                                            onClick={() => {
+                                                                setMenuOpenId(null);
+                                                                setSelectedConversation(conv);
+                                                                setShowExportModal(true);
+                                                            }}
+                                                        >
+                                                            📤 Export
+                                                        </button>
+    
+                                                        <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                            onClick={() => {
+                                                                setMenuOpenId(null);
+                                                                shareConversation(conv.id);
+                                                            }}
+                                                        >
+                                                            🔗 Share
+                                                        </button>
+
+                                                        <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
+                                                            onClick={() => {
+                                                                setMenuOpenId(null);
+                                                                archiveConversation(conv.id);
+                                                            }}
+                                                        >
+                                                            📦 Archive
+                                                        </button>
+
+                                                        <button className="cursor-pointer block w-full text-left p-1 text-red-500"
+                                                            onClick={() => {
+                                                                setMenuOpenId(null);
+                                                                setConversationToDelete(conv.id);
+                                                                setDeleteModalOpen(true);
+                                                            }}
+                                                        >
+                                                            🗑 Delete
+                                                        </button>
+
+                                                    </div>
+                                                )}
+
+                                                
+                                            </div>
+
+                                        ))}
+
+                                    </div>
 
                                 </div>
-                            )}
 
-                            
-                        </div>
-                    ))}
+                            )
+
+                        ))
+                        }
 
                 </div>
-{/* 
-                <div className="space-y-2">
-
-                    <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
-                        Weather Forecast
-                    </button>
-
-                    <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
-                        IPL Analysis
-                    </button>
-
-                    <button className="w-full text-left p-3 rounded-lg hover:bg-slate-800">
-                        Stock Prediction
-                    </button>
-
-                </div> */}
 
             </div>
+
+            {/* <button onClick={() => router.push("/archive")} className="cursor-pointer w-full bg-slate-800 hover:bg-slate-700 rounded-xl py-2 mb-3 px-2 text-left">
+                📦 Archive
+            </button> */}
 
             {/* User */}
             <div className="border-t border-slate-700 p-4">
@@ -345,6 +864,61 @@ export default function Sidebar() {
                 </div>
 
             )}
+
+            {/* Export Modal */}
+            {
+                showExportModal && (
+
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+                        <div className="bg-white rounded-2xl shadow-xl p-6 w-[400px]">
+
+                            <h2 className="text-xl font-semibold mb-5 text-gray-800">
+                                Export Conversation
+                            </h2>
+
+                            <div className="space-y-3 text-gray-600">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="exportType" value="pdf"
+                                        checked={exportType === "pdf"} onChange={(e) => setExportType(e.target.value)} />
+                                    📄 PDF
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="exportType" value="txt" checked={exportType === "txt"}
+                                        onChange={(e) => setExportType(e.target.value)} />
+                                    📝 Text (.txt)
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="exportType" value="md" checked={exportType === "md"}
+                                        onChange={(e) => setExportType(e.target.value)} />
+                                    📑 Markdown (.md)
+                                </label>
+                            </div>
+
+                            <div className="flex justify-end gap-3 mt-8">
+                                <button onClick={() => setShowExportModal(false) } className="px-4 py-2 rounded-xl border border-gray-300 bg-gray-500 hover:bg-gray-900">
+                                    Cancel
+                                </button>
+                                <button className="cursor-pointer px-5 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+                                    onClick={() => {
+                                        exportConversation(
+                                            selectedConversation.id,
+                                            exportType
+                                        );
+                                        setShowExportModal(false);
+                                    }}                            
+                                >
+                                    Export
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                )
+            }
 
         </div>
     );

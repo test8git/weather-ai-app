@@ -33,6 +33,18 @@ class ChatRequest(BaseModel):
     selected_model: str
 
 
+@app.get("/")
+def root():
+    return {
+        "status": "General AI Assistant Backend Running"
+    }
+
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
+    }
+
 @app.post("/transcribe")
 async def transcribe(audio: UploadFile = File(...)):
 

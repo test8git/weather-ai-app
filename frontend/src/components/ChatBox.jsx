@@ -721,7 +721,7 @@ export default function ChatBox() {
                                                 </h3>
                                             ),
                                             p: ({ children }) => (
-                                                <div className="leading-8 text-[15px] text-gray-800 mb-3">
+                                                <div className="leading-8 text-[15px] text-gray-800 mb-3 break-words">
                                                   {children}
                                                 </div>
                                             ),
@@ -829,20 +829,6 @@ export default function ChatBox() {
                                                     );
                                                 }
 
-                                                /*
-                                                -----------------------------
-                                                FALLBACK CODE BLOCK
-                                                -----------------------------
-                                                */
-                                                
-                                                // return (
-                                                //     <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
-                                                //         <code>
-                                                //             {children}
-                                                //         </code>
-                                                //     </pre>
-                                                // );
-
                                                 return (
                                                   <code className={className}>
                                                     {children}
@@ -857,7 +843,7 @@ export default function ChatBox() {
                                             //     </pre>
                                             // ),
                                             pre: ({ children }) => (
-                                              <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
+                                              <pre className="whitespace-pre-wrap break-words overflow-x-auto bg-slate-900 p-4 rounded-xl">
                                                 {children}
                                               </pre>
                                             ),

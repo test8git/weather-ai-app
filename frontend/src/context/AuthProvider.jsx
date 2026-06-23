@@ -16,35 +16,60 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(undefined);
     const [loading, setLoading] = useState(true);
 
+    // // // useEffect(() => {
+
+    // // //     const getUser = async () => {
+
+    // // //         const {data: { user }} = await supabase.auth.getUser();
+            
+    // // //         const {data: { session }} = await supabase.auth.getSession();
+
+    // // //         setUser(user ?? null);
+
+    // // //         setLoading(false);
+    // // //     };
+
+    // // //     getUser();
+
+    // // //     const {data: { subscription }} = supabase.auth.onAuthStateChange(
+    // // //                                                     (event, session) => {
+                                                            
+    // // //                                                         setUser(session?.user ?? null);
+
+    // // //                                                         setLoading(false);
+    // // //                                                     });
+
+    // // //     return () => subscription.unsubscribe();
+
+    // // // }, []);
+
     useEffect(() => {
 
-        const getUser = async () => {
+        const loadSession = async () => {
 
-        const {data: { user }} = await supabase.auth.getUser();
-        
-        // console.log("getUser user:", user);
-        
-        const {data: { session }} = await supabase.auth.getSession();
+            const {
+                data: { session }
+            } = await supabase.auth.getSession();
 
-        // console.log("getSession:", session);
+            setUser(session?.user ?? null);
 
-        setUser(user ?? null);
+            setLoading(false);
 
-        setLoading(false);
         };
 
-        getUser();
+        loadSession();
 
-        const {data: { subscription }} = supabase.auth.onAuthStateChange(
-                                                        (event, session) => {
-                                                            
-                                                            // console.log("EVENT:", event);
-                                                            // console.log("SESSION:", session);
-                                                            
-                                                            setUser(session?.user ?? null);
+        const {
+            data: { subscription }
+        } = supabase.auth.onAuthStateChange(
+            (_event, session) => {
 
-                                                            setLoading(false);
-                                                        });
+                setUser(session?.user ?? null);
+
+                setLoading(false);
+
+            }
+        );
 
         return () => subscription.unsubscribe();
 
