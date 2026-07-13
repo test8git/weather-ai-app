@@ -22,7 +22,7 @@ dayjs.extend(isYesterday);
 export default function Sidebar() {
     const { setGlobalLoading } = useLoading();
     const { user } = useAuth();
-    const { conversationId, setConversationId, setMessages, setNewChatTrigger, conversations, setConversations} = useConversation();
+    const { conversationId, setConversationId, messages, setMessages, setNewChatTrigger, conversations, setConversations, loadConversationMessages} = useConversation();
     
     const [menuOpenId, setMenuOpenId] = useState(null);
 
@@ -405,6 +405,8 @@ export default function Sidebar() {
         {
             setGlobalLoading(true);
             setConversationId(conversationId);
+
+            await loadConversationMessages(conversationId);
         }
         finally
         {
@@ -540,11 +542,11 @@ export default function Sidebar() {
             </div>
 
             {/* Search */}
-            {/* <div className="px-4 pb-4 relative">
+            <div className="px-4 pb-4 relative">
                 <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 absolute left-7 top-3" />
                 <input type="text" placeholder="Search chats" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)}
                     className="w-full bg-slate-800 text-white rounded-xl pl-10 pr-4 py-2 border border-slate-700 focus:border-slate-500 outline-none" />
-            </div> */}
+            </div>
 
             {/* History */}
             <div className="flex-1 px-4 overflow-y-auto">
@@ -617,7 +619,7 @@ export default function Sidebar() {
                                                         }
                                                     </button>
 
-                                                    <button className="cursor-pointer block w-full text-left p-1 text-blue-500 hover:bg-gray-100"
+                                                    {/* <button className="cursor-pointer block w-full text-left p-1 text-blue-500 hover:bg-gray-100"
                                                         onClick={() => {
                                                             setMenuOpenId(null);
                                                             setSelectedConversation(conv);
@@ -625,7 +627,7 @@ export default function Sidebar() {
                                                         }}
                                                     >
                                                         📤 Export
-                                                    </button>
+                                                    </button> */}
 
                                                     <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
                                                         onClick={() => {
@@ -712,13 +714,13 @@ export default function Sidebar() {
                                                 </div>
                                                 
                                                 {/* Three Dot Menu */}
-                                                {/* <button onClick={(e) => {
+                                                <button onClick={(e) => {
                                                         e.stopPropagation();
                                                         setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
                                                     }}
                                                     className={`cursor-pointer px-2 ${menuOpenId === conv.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                                                         <EllipsisVerticalIcon className="w-5 h-5" />
-                                                </button> */}
+                                                </button>
 
                                                 {/* Popup Menu */}
                                                 {menuOpenId === conv.id && (
@@ -750,7 +752,7 @@ export default function Sidebar() {
                                                             }
                                                         </button>
                                                             
-                                                        <button className="cursor-pointer block w-full text-left p-1 text-blue-500 hover:bg-gray-100"
+                                                        {/* <button className="cursor-pointer block w-full text-left p-1 text-blue-500 hover:bg-gray-100"
                                                             onClick={() => {
                                                                 setMenuOpenId(null);
                                                                 setSelectedConversation(conv);
@@ -758,7 +760,7 @@ export default function Sidebar() {
                                                             }}
                                                         >
                                                             📤 Export
-                                                        </button>
+                                                        </button> */}
     
                                                         <button className="cursor-pointer block w-full text-left p-1 text-blue-500"
                                                             onClick={() => {
@@ -809,9 +811,9 @@ export default function Sidebar() {
 
             </div>
 
-            {/* <button onClick={() => router.push("/archive")} className="cursor-pointer w-full bg-slate-800 hover:bg-slate-700 rounded-xl py-2 mb-3 px-2 text-left">
+            <button onClick={() => router.push("/archive")} className="cursor-pointer w-full bg-slate-800 hover:bg-slate-700 rounded-xl py-2 mb-3 px-2 text-left">
                 📦 Archive
-            </button> */}
+            </button>
 
             {/* User */}
             <div className="border-t border-slate-700 p-4">

@@ -5,10 +5,7 @@ import mimetypes
 from PIL import Image
 from langchain_core.messages import HumanMessage
 from services.llm_factory import get_llm
-from tools.multi_tool import search_web, get_weather, current_time, search_news, wikipedia_search, search_programming, search_finance
-from tools.image_tool import generate_image
-from tools.places_tool import search_places
-from tools.calculator_tool import calculate_expression
+from tools.multi_tool import search_web, get_weather, calculate_expression, current_time, search_news, wikipedia_search
 from tools.memory_tool import save_message, get_history
 from tools.file_tool import read_file_content
 from services.transcribe_service import transcribe_audio
@@ -19,18 +16,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import json
-from langchain_core.messages import ToolMessage, AIMessage
-
 
 # Give the AI access to this tool/function
-tools = [search_web, get_weather, calculate_expression, current_time, search_news, wikipedia_search, search_programming, search_finance, generate_image, search_places]
+tools = [search_web, get_weather, calculate_expression, current_time, search_news, wikipedia_search]
 
 def sse_event(event_type, content):
-
-    print("sse_event : ")
-    print(event_type)
-    print(content)
-
     return f"{json.dumps({
         "type": event_type,
         "content": content
@@ -46,6 +36,87 @@ def sse_step(step, status, icon):
     }
 
     return f"{json.dumps(data)}\n\n"
+
+def should_use_wikipedia(question):
+
+    q = question.lower().strip()
+
+    return (
+        q.startswith("who is")
+        or q.startswith("what is")
+        or q.startswith("where is")
+        or q.startswith("when was")
+    )
+
+def should_search(question):
+
+    SEARCH_KEYWORDS = [
+
+        # time
+        "today",
+        "yesterday",
+        "tomorrow",
+        "latest",
+        "current",
+        "recent",
+        "this week",
+        "this month",
+        "this year",
+        "now",
+
+        # weather
+        "weather",
+        "temperature",
+        "forecast",
+        "rain",
+
+        # finance
+        "stock",
+        "share",
+        "market",
+        "price",
+        "bitcoin",
+        "gold",
+        "silver",
+        "nifty",
+        "sensex",
+
+        # sports
+        "ipl",
+        "cricket",
+        "football",
+        "match",
+        "score",
+        "winner",
+        "live",
+
+        # news
+        "news",
+        "breaking",
+        "update",
+
+        # company
+        "apple",
+        "google",
+        "microsoft",
+        "tesla",
+        "amazon",
+
+        # charts
+        "chart",
+        "graph",
+        "trend",
+
+        # currencies
+        "usd",
+        "eur",
+        "inr",
+        "exchange rate"
+    ]
+
+    q = question.lower()
+
+    return any(keyword in q for keyword in SEARCH_KEYWORDS)
 
 
 def need_chart(question):
@@ -86,237 +157,126 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
     chart_prompt = ""
     if need_chart(question):
         chart_prompt = """
-            ========================
-            CHARTS
-            ========================
+            Whenever the user asks for
+                - chart
+                - graph
+                - trend
+                - plot
+                - visualization
+                - stock price
+                - sales chart
+                - revenue chart
 
-            If the user asks for:
+                you MUST NOT answer in plain text.
 
-            - chart
-            - graph
-            - trend
-            - plot
-            - visualization
-            - dashboard
-            - stock chart
-            - sales chart
-            - revenue chart
+                You MUST return ONLY a chart block.
 
-            Return ONLY a chart block.
+                Example:
 
-            Example:
-
-            ```chart
-            {
-            "type":"line",
-            "title":"Sample Chart",
-            "xKey":"date",
-            "series":[
+                ```chart
                 {
-                "name":"Value",
-                "dataKey":"value"
+                "type":"line",
+                "title":"Apple Stock",
+                "xKey":"date",
+                "series":[
+                    {
+                    "name":"Price",
+                    "dataKey":"price"
+                    }
+                ],
+                "data":[
+                    {
+                    "date":"Mon",
+                    "price":201
+                    },
+                    {
+                    "date":"Tue",
+                    "price":204
+                    },
+                    {
+                    "date":"Wed",
+                    "price":208
+                    }
+                ]
                 }
-            ],
-            "data":[
-                {
-                "date":"Mon",
-                "value":10
-                },
-                {
-                "date":"Tue",
-                "value":20
-                }
-            ]
-            }
         """
 
     system_prompt = f"""
 
-    You are a professional AI assistant.
+You are a professional AI assistant.
 
-    Current timezone:
-    Asia/Kolkata
+Current timezone:
+Asia/Kolkata
 
-    Today's date:
-    {currentDate}
+Today's date:
+{currentDate}
 
-    Current weekday:
-    {currentWeekDay}
+Current weekday:
+{currentWeekDay}
 
-    Current time:
-    {currentTime}
+Current time:
+{currentTime}
 
-    ========================
-    GENERAL BEHAVIOR
-    ========================
+IMPORTANT BEHAVIOR RULES:
 
-    - Respond directly with the final answer.
-    - Never reveal internal reasoning.
-    - Never explain your thinking process.
-    - Never narrate actions.
-    - Never mention tools.
-    - Never say:
-        - "Let me check..."
-        - "Searching..."
-        - "Using tool..."
-        - "I will use..."
-        - "I need to search..."
-    - Be concise but complete.
-    - If the user requests detailed information, provide a detailed answer.
-    - Use Markdown formatting where appropriate.
-    - Use tables when they improve readability.
+- Respond directly with the final answer.
+- NEVER explain internal reasoning.
+- NEVER narrate actions.
+- NEVER mention tools.
+- NEVER say:
+    - "I will use..."
+    - "Let me check..."
+    - "Searching..."
+    - "Using tool..."
+    - "I need to search..."
 
-    ========================
-    TOOL USAGE
-    ========================
+TOOL USAGE RULES:
 
-    When external, live, or changing information is required, ALWAYS use the appropriate tool.
-
-    Examples include:
-
-    - Current weather
-    - News
-    - Sports
-    - Stock prices
-    - Exchange rates
-    - Company information
-    - Recent events
-    - Current date/time
-    - Live information
-    - Internet searches
-
-    Never answer these from memory if a tool is available.
-
-    Do not tell the user that you are using a tool.
-
-    ========================
-    PROGRAMMING
-    ========================
-
-    When the user asks for programming help:
-
-    1. Briefly explain the solution.
-    2. Return complete working code.
-    3. Put every code snippet inside Markdown fenced blocks.
-    4. Always specify the language.
-    5. Include useful comments.
-    6. If multiple files are needed, separate them with headings.
-    7. For C#, target .NET 8 unless specified otherwise.
-    8. For SQL, include CREATE TABLE statements if relevant.
-    9. Prefer official documentation.
-    10. Use Stack Overflow for practical solutions.
-    11. Use GitHub for real-world examples.
-    12. Use programming search automatically whenever external information is useful.
-    13. Never mention that you searched.
-
-    ======================
-    Finance
-    ======================
-
-    Whenever the user asks about:
-
-    - stock
-    - share
-    - company price
-    - market cap
-    - dividend
-    - PE ratio
-    - earnings
-    - trading volume
-
-    always use the finance tool.
-
-    Never use general web search if finance data is available.
-
-    ======================
-    News
-    ======================
-
-    Use search_news whenever the user asks about:
-
+- Use tools whenever external or real-time information is required.
+- Use weather tool for weather-related questions.
+- Use search_news for:
     - news
-    - today's news
-    - latest news
-    - breaking news
-    - politics
     - sports
-    - elections
-    - AI news
-    - business news
-    - market news
     - current events
+    - recent information
+    - today's updates
 
-    Always use search_news instead of search_web when the user is requesting recent news.
+- Use calculator only for calculations.
 
-    =======================
-    SEARCH PLACES
-    =======================
-
-    Use search_places whenever the user asks for:
-
-    restaurants
-    hotels
-    hospitals
-    ATMs
-    petrol pumps
-    tourist places
-    cafes
-    parks
-    shopping malls
-    schools
-    colleges
-    airports
-    railway stations
-    nearby places
-    location
-    address
-    map
-
-    ====================
-    CALCULATE EXPRESSION
-    ====================
-
-    Use calculate_expression whenever the user asks for:
-
-    - arithmetic
-    - mathematics
-    - percentage
-    - square root
-    - logarithm
-    - factorial
-    - trigonometry
-    - powers
-    - equations
-    - calculations
-
-    =======================
-    Image Generation
-    =======================
-
-    Whenever the user asks to
-
-    - generate image
-    - create image
-    - draw
-    - paint
-    - illustration
-    - wallpaper
-    - logo
-    - icon
-
-    call generate_image.
-
-    Return the generated image.
+- Do NOT refuse valid requests when a tool can answer them.
+- If a tool is available, use it silently and provide the final answer only.
 
     {chart_prompt}
 
-    """
+
+You are an expert software engineer.
+
+When the user asks for programming code:
+
+1. Explain the solution briefly.
+2. Return the complete code.
+3. Put every code snippet inside Markdown fenced blocks.
+4. Always specify the language.
+5. Include comments where useful.
+6. If multiple files are needed, clearly separate them with headings.
+7. For C#, target .NET 8 unless the user specifies otherwise.
+8. For SQL, include CREATE TABLE statements if relevant.
+9. Never return code without a language tag.
+
+Example:
+
+```csharp
+Console.WriteLine("Hello");
+
+
+Always provide clean, concise, user-friendly responses.
+
+"""
     
     # SAVE USER MESSAGE
     save_message(session_id, "user", question)
 
     answer = ""
-    tool_name = ""
 
     # GET OLD HISTORY
     history = get_history(session_id)
@@ -484,7 +444,101 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
                 "✔️"
             )
 
-            
+            # CHECK FIRST
+            if should_use_wikipedia(question):
+
+                print("Wiki Search")
+
+                yield sse_step(
+                    "Searching web...",
+                    "running",
+                    "🌐"
+                )
+
+                search_result = wikipedia_search.invoke(question)
+
+                yield sse_step(
+                    "Searching web...",
+                    "completed",
+                    "✔️"
+                )
+
+                formatted = llm.invoke(
+                    f"""
+                    {system_prompt}
+
+                    Question:
+                    {question}
+
+                    {fileContent}
+
+                    Search Result:
+                    {search_result}
+
+                    Answer using both the uploaded file and the search result if relevant.
+
+                    """
+                )
+
+                answer+=formatted.content
+
+                yield sse_event(
+                    "message",
+                    formatted.content
+                )
+                
+                save_message(session_id, "assistant", answer)
+
+                return
+
+            # CHECK FIRST
+            if should_search(question):
+
+                print("Search Web")
+
+                yield sse_step(
+                    "Searching web...",
+                    "running",
+                    "🌐"
+                )
+
+                search_result = search_web.invoke(question)
+
+                yield sse_step(
+                    "Searching web...",
+                    "completed",
+                    "✔️"
+                )
+
+                formatted = llm.invoke(
+                    f"""
+                    {system_prompt}
+
+                    Question:
+                    {question}
+
+                    {fileContent}
+
+                    Search Result:
+                    {search_result}
+
+                    Answer using both the uploaded file
+                    and the search result if relevant.
+
+                    """
+                )
+
+                answer+=formatted.content
+
+                yield sse_event(
+                    "message",
+                    formatted.content
+                )
+                
+                save_message(session_id, "assistant", answer)
+
+                return
+
             # Create Graph Dynamically
             graph = create_react_agent(llm, tools, prompt=system_prompt)            
 
@@ -497,9 +551,7 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
 
             isAnalyzingCompleted = False
             isSearchingWeb = 0
-            isResultGenerated = False
             isGeneratingStarted = False
-            last_content = ""
 
             for message, metadata in graph.stream(
                 {
@@ -518,8 +570,6 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
                 # TOOL STATUS
                 node = metadata.get("langgraph_node", "")
 
-                
-
                 # DETECT TOOL
                 if hasattr(message, "tool_calls"):
 
@@ -536,8 +586,55 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
 
                         tool_name = tool_call.get("name", "")
 
-                        print("TOOL : ")
-                        print(tool_name)
+                        print("TOOL =", tool_name)
+
+                        #region (Old code)
+
+                        # if tool_name == "get_weather":
+
+                        #     yield sse_step(
+                        #         "Searching web...",
+                        #         "running",
+                        #         "🌐"
+                        #     )
+                        # elif tool_name == "calculate_expression":
+
+                        #     yield sse_step(
+                        #         "Searching web...",
+                        #         "running",
+                        #         "🌐"
+                        #     )
+                        # elif tool_name == "current_time":
+
+                        #     yield sse_step(
+                        #         "Searching web...",
+                        #         "running",
+                        #         "🌐"
+                        #     )
+                        # elif tool_name == "search_web":
+
+                        #     yield sse_step(
+                        #         "Searching web...",
+                        #         "running",
+                        #         "🌐"
+                        #     )
+                        # elif tool_name == "wikipedia_search":
+
+                        #     yield sse_step(
+                        #         "Searching web...",
+                        #         "running",
+                        #         "🌐"
+                        #     )
+                        # elif tool_name == "search_news":
+
+                        #     yield sse_step(
+                        #         "Searching web...",
+                        #         "running",
+                        #         "🌐"
+                        #     )
+
+                        # endregion
+                
 
                 if node == "agent" and not isGeneratingStarted:
                     # TOOL COMPLETED → BACK TO AGENT
@@ -549,50 +646,7 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
                     )
                     isGeneratingStarted = True
 
-                # # # For image generation
-                if isinstance(message, ToolMessage):
-                    if (isSearchingWeb==1):
-                        yield sse_step(
-                            "Searching web...",
-                            "completed",
-                            "✔️"
-                        )
-                        isSearchingWeb = 2
-
-                    try:
-                        
-                        if tool_name != "":
-                            if tool_name == "generate_image":
-
-                                tool_result = json.loads(message.content)
-
-                                if tool_name == "calculate_expression":
-                                    pass
-                                    # answer = f"""
-                                    # Expression:
-                                    # {tool_result['expression']}
-                                    # Answer:
-                                    # {tool_result['result']}
-                                    # """
-
-                                    # isResultGenerated = True
-                                    # # yield sse_event("message", tool_text)
-                                    # continue
-
-                                elif tool_name == "generate_image":
-
-                                    if tool_result.get("type") == "image":
-                                        isResultGenerated = True
-                                        yield sse_event("image", tool_result["image_url"])
-                                        continue
-
-                    except Exception:
-                        pass
-
-                    
-
-                # STRING CONTENT
-                if isResultGenerated == False and hasattr(message, "content"):
+                if hasattr(message, "content"):
                     if (isSearchingWeb==1):
                         yield sse_step(
                             "Searching web...",
@@ -604,6 +658,7 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
                     content = message.content
 
                     # STRING CONTENT
+                    # if isinstance(content, str) and content.strip():
                     if isinstance(content, str):
 
                         content = message.content
@@ -612,17 +667,9 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
                         clean_content = content
 
                         if clean_content:
-                            
-                            # Skip duplicate content
-                            if clean_content == last_content:
-                                continue
-
-                            last_content = clean_content
-
-                            print("CLEAN CONTENT : " + clean_content)
-                            print("LAST CONTENT : " + last_content)
 
                             answer += clean_content
+
                             yield sse_event("message", clean_content)
 
 
@@ -641,6 +688,7 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
                                 if clean_content:
 
                                     answer += clean_content
+
                                     yield sse_event("message", clean_content)
                             
 
@@ -665,8 +713,6 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
         )
 
 
-    print("ANSWER : ")
-    print(answer)
     
 
     return answer

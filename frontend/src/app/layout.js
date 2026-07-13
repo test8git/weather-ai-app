@@ -1,3 +1,4 @@
+import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/context/AuthProvider";
 import { LoadingProvider } from "@/context/LoadingContext"
 import GlobalLoader from "@/components/GlobalLoader"
@@ -32,10 +33,21 @@ export default function RootLayout({ children }) {
           <ConversationProvider>
             <LoadingProvider>
               <GlobalLoader />
-              {children}
+              {children}              
             </LoadingProvider>
           </ConversationProvider>
         </AuthProvider>
+        <Toaster position="bottom-right" reverseOrder={false} 
+                 toastOptions={{
+                    duration: 2500, 
+                    style: {borderRadius: "12px", background: "#333", color: "#fff"},
+                    success: {
+                      style: {background: "#16a34a", color: "#fff",},
+                    },
+                    error: {
+                      style: {background: "#dc2626", color: "#fff",},
+                    },
+                  }} />
       </body>
     </html>
   );

@@ -6,9 +6,12 @@ import tempfile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
+import json
+from threading import Thread
 from pydantic import BaseModel
 from graph.agent_graph import run_agent_stream
 from services.transcribe_service import transcribe_audio
+from tools.zapier_tool import send_to_zapier
 
 import asyncio
 
@@ -25,6 +28,51 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# # # def extract_text(chunk: str) -> str:
+# # #     try:
+# # #         data = json.loads(chunk)
+
+# # #         # {"type":"message","content":"Hello"}
+# # #         if isinstance(data, dict):
+# # #             return data.get("content", "")
+
+# # #         return ""
+
+# # #     except json.JSONDecodeError:
+# # #         # Chunk is plain text
+# # #         return chunk
+
+# # #     except Exception as e:
+# # #         print("extract_text:", e)
+# # #         return ""
+
+
+def extract_text(chunk):
+
+    try:
+
+        data = json.loads(chunk)
+
+        if data["type"] == "message":
+            return data["content"]
+
+        elif data["type"] == "image":
+            return "[Generated Image]"
+
+        elif data["type"] == "chart":
+            return "[Chart]"
+
+        elif data["type"] == "code":
+            return "[Code]"
+
+        elif data["type"] == "places":
+            return "[content]"
+
+        return "[content]"
+
+    except Exception:
+        return "[content]"
 
 
 class ChatRequest(BaseModel):
@@ -103,6 +151,8 @@ async def chat(
             f.write(await file.read())
 
     async def generate():
+        answer = ""
+
         for chunk in run_agent_stream(
             question,
             session_id,
@@ -111,10 +161,31 @@ async def chat(
             content_type
         ):
 
+            answer += extract_text(chunk)
+
             # SSE FORMAT
             yield f"data: {chunk}\n\n"
 
             await asyncio.sleep(0.02)
+        
+        # print("ANSWER : ")
+        # print(answer)
+
+        responseToZaiper = answer
+        # if len(responseToZaiper) > 300:
+        #     responseToZaiper = responseToZaiper[:300] + "\n\n...(truncated)"
+
+        # AI response completed
+        Thread(
+            target=send_to_zapier,
+            args=(
+                question,
+                responseToZaiper,
+                selected_model,
+                session_id
+            ),
+            daemon=True
+        ).start()
 
     return StreamingResponse(
         generate(),
