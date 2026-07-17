@@ -8,11 +8,13 @@ from services.llm_factory import get_llm
 from tools.multi_tool import search_web, get_weather, current_time, search_news, wikipedia_search, search_programming, search_finance
 from tools.image_tool import generate_image
 from tools.places_tool import search_places
+from tools.github_tool import search_github
 from tools.calculator_tool import calculate_expression
 from tools.memory_tool import save_message, get_history
 from tools.file_tool import read_file_content
 from services.transcribe_service import transcribe_audio
 from services.image_service import analyze_image
+from common.error_formatter import format_ai_error
 import subprocess
 import cv2
 from datetime import datetime
@@ -20,10 +22,11 @@ from zoneinfo import ZoneInfo
 
 import json
 from langchain_core.messages import ToolMessage, AIMessage
+from services.html_builder import *
 
 
 # Give the AI access to this tool/function
-tools = [search_web, get_weather, calculate_expression, current_time, search_news, wikipedia_search, search_programming, search_finance, generate_image, search_places]
+tools = [search_web, get_weather, calculate_expression, current_time, search_news, wikipedia_search, search_programming, search_finance, generate_image, search_places, search_github]
 
 def sse_event(event_type, content):
 
@@ -224,7 +227,28 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
     - earnings
     - trading volume
 
-    always use the finance tool.
+   If the user asks about:
+
+    - earnings
+    - EPS
+    - revenue
+    - analyst estimates
+    - earnings surprise
+    - beat / miss
+    - quarterly results
+
+    NEVER search using only:
+
+    "Apple earnings history"
+
+    Instead search using
+
+    "<ticker> earnings surprise"
+    "<ticker> quarterly EPS actual estimate"
+    "<ticker> earnings actual vs estimate"
+    "<ticker> EPS consensus" 
+
+    always use the search_finance tool.
 
     Never use general web search if finance data is available.
 
@@ -308,6 +332,20 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
 
     Return the generated image.
 
+    =======================
+    GITHUB
+    =======================
+
+    For GitHub-related questions such as:
+
+    - Find GitHub repository
+    - Search GitHub
+    - Open source project
+    - Repository
+    - GitHub library
+
+    Always use the search_github tool.
+
     {chart_prompt}
 
     """
@@ -362,7 +400,11 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
         except Exception as e:
             import traceback
             traceback.print_exc()
-            error_message = repr(e)
+            
+            # error_message = repr(e)
+
+            # Format Error
+            error_message = format_ai_error(e)
 
             answer += error_message
 
@@ -562,28 +604,82 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
                     try:
                         
                         if tool_name != "":
-                            if tool_name == "generate_image":
+                            if tool_name == "generate_image" or tool_name == "calculate_expression" or tool_name == "search_github" or tool_name == "search_places":
 
                                 tool_result = json.loads(message.content)
 
                                 if tool_name == "calculate_expression":
-                                    pass
-                                    # answer = f"""
-                                    # Expression:
-                                    # {tool_result['expression']}
-                                    # Answer:
-                                    # {tool_result['result']}
-                                    # """
+                                    # pass
+                                    tool_text = f"""
+                                    Expression:
+                                    {tool_result['expression']}
+                                    Answer:
+                                    {tool_result['result']}
+                                    """
 
-                                    # isResultGenerated = True
-                                    # # yield sse_event("message", tool_text)
-                                    # continue
+                                    answer = tool_text
+                                    isResultGenerated = True
+                                    yield sse_event("message", tool_text)
+                                    continue
 
                                 elif tool_name == "generate_image":
 
                                     if tool_result.get("type") == "image":
                                         isResultGenerated = True
                                         yield sse_event("image", tool_result["image_url"])
+                                        continue
+
+                                elif tool_name == "search_places":
+
+                                    tool_text = ""
+                                    items = []
+                                    for place in tool_result["places"]:
+
+                                        item_link = ""
+                                        if place.get("google_maps"):
+                                            item_link = hyperlink("Open Google Maps",place["google_maps"])
+                                        elif place.get("url"):
+                                            item_link = hyperlink("Open Link",place["url"])
+
+                                        items.append(
+                                            bold(place["name"])
+                                            + line_break()
+                                            + item_link
+                                        )
+
+                                    tool_text = heading(question)
+
+                                    tool_text += ordered_list(items)
+
+                                    answer = tool_text
+                                    isResultGenerated = True
+                                    yield sse_event("message", tool_text)
+                                    continue
+
+                                elif tool_name == "search_github":
+
+                                    if tool_result.get("type") == "github":
+
+                                        tool_text = ""
+
+                                        for repo in tool_result["repositories"]:
+                                            body = ""
+                                            body += paragraph(repo["description"])
+                                            body += bold(f"⭐ {repo['stars']}")
+                                            body += line_break()
+                                            body += hyperlink(
+                                                "Open Repository",
+                                                repo["url"]
+                                            )
+
+                                            tool_text += card(
+                                                repo["full_name"],
+                                                body
+                                            )
+
+                                        answer = tool_text
+                                        isResultGenerated = True
+                                        yield sse_event("message", tool_text)
                                         continue
 
                     except Exception:
@@ -648,11 +744,17 @@ def run_agent_stream(question, session_id, selected_model, file_path=None, conte
             # yield sse_event("status", "")
 
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            error_message = repr(e)
+            # import traceback
+            # traceback.print_exc()
+            # error_message = repr(e)
+
+            # Format Error
+            error_message = format_ai_error(e)
 
             answer += error_message
+
+            print("ERROR : ")
+            print(error_message)
 
             yield sse_event("error", error_message)
 

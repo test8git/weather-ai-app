@@ -43,7 +43,7 @@ def send_to_zapier(
             timeout=10
         )
 
-        print("Zapier:", response.status_code)
+        # print("Zapier:", response.status_code)
 
     except Exception as e:
 

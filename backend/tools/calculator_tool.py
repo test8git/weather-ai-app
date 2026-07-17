@@ -35,7 +35,17 @@ def calculate_expression(expression: str):
             else:
                 result = round(value, 10)
 
+        return {
+            "success": True,
+            "expression": expression,
+            "result": str(result)
+        }
+
         return f"{expression} = {result}"
 
     except Exception as e:
+        # return {
+        #     "success": False,
+        #     "message": str(e)
+        # }
         return f"Calculation Error: {e}"

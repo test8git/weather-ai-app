@@ -381,61 +381,82 @@ def search_finance(query: str) -> str:
 
         if asset is None:
 
-            return {
-                "success":False,
-                "message": f"Unable to identify '{query}'."
-            }
+            # return {
+            #     "success":False,
+            #     "message": f"Unable to identify '{query}'."
+            # }
+
+            # return f"Unable to identify '{query}'."
+            return f""
 
         symbol = asset["symbol"]
 
         stock = yf.Ticker(symbol)
 
+        # history = yf.ticker.history(
+        #     period="1mo",
+        #     interval="1d"
+        # )
+
+        # chart_data = []
+
+        # for date, row in history.iterrows():
+
+        #     chart_data.append({
+
+        #         "date": date.strftime("%d %b"),
+
+        #         "close": round(row["Close"],2)
+
+        #     })
+
         info = stock.info
+
+        # # # return {
+        # # #     "success": True,
+        # # #     "type":"finance",
+        # # #     "company": info["longName"],
+        # # #     "price": info["currentPrice"]
+        # # # }
 
         return f"""
         Company:
         {info.get("longName")}
-
         Ticker:
         {symbol}
-
         Current Price:
         {info.get("currentPrice")}
-
         Previous Close:
         {info.get("previousClose")}
-
         Open:
         {info.get("open")}
-
         Day High:
         {info.get("dayHigh")}
-
         Day Low:
         {info.get("dayLow")}
-
         52 Week High:
         {info.get("fiftyTwoWeekHigh")}
-
         52 Week Low:
         {info.get("fiftyTwoWeekLow")}
-
         Market Cap:
         {info.get("marketCap")}
-
         PE Ratio:
         {info.get("trailingPE")}
-
         Dividend Yield:
         {info.get("dividendYield")}
-
         Volume:
         {info.get("volume")}
         """
 
     except Exception as e:
+        # return {
+        #     "success": False,
+        #     "message": str(e)
+        # }
 
-        return str(e)
+        
+
+        return f"Error: {e}"
 
   
         

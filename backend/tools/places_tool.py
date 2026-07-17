@@ -144,7 +144,7 @@ out center;
 
 # Tavily search
 def tavily_search(question):
-    response = tavily.search(query=question, max_results=5)
+    response = tavily.search(query=question, max_results=10)
 
     places = []
     for r in response["results"]:
@@ -197,35 +197,34 @@ def search_places(question: str):
             if p["name"] not in merged:
                 merged[p["name"]] = p
 
-        print(merged)
-
-        # return {
-
-        #     "success": True,
-        #     "type": "places",
-        #     "category": category,
-        #     "location": location,
-        #     "places": list(merged.values())[:5]
-        # }
-
-        output = []
-
-        for i, place in enumerate(list(merged.values())[:5], start=1):
-            output.append(f"""{i}. {place.get("name","")}
-                            Address:
-                            {place.get("address","Not Available")}
-                            Google Maps:
-                            {place.get("google_maps","")}
-                            """)
-
-        return "\n\n".join(output)
-
-    except Exception as e:
+        # print(merged)
 
         return {
 
-            "success": False,
+            "success": True,
+            "type": "places",
+            "category": category,
+            "location": location,
+            "places": list(merged.values())[:10]
+        }
 
-            "message": str(e)
+        # output = []
 
-        }    
+        # for i, place in enumerate(list(merged.values())[:5], start=1):
+        #     output.append(f"""{i}. {place.get("name","")}
+        #                     Address:
+        #                     {place.get("address","Not Available")}
+        #                     Google Maps:
+        #                     {place.get("google_maps","")}
+        #                     """)
+
+        # return "\n\n".join(output)
+
+    except Exception as e:
+
+        # return {
+        #     "success": False,
+        #     "message": str(e)
+        # }
+
+        return f"Error: {e}"    

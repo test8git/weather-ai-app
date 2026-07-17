@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useLoading } from "@/context/LoadingContext"
-import ArchiveSidebar from "@/components/ArchiveSidebar";
+// import ArchiveSidebar from "@/components/ArchiveSidebar";
+import Sidebar from "@/components/Sidebar";
 
 export default function ArchivePage()
 {
@@ -14,6 +16,8 @@ export default function ArchivePage()
     const [conversations, setConversations] = useState([]);
     const { setGlobalLoading } = useLoading();
     const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+
+    const router = useRouter();
 
     useEffect(() => 
     {
@@ -105,7 +109,7 @@ export default function ArchivePage()
     return (
         <ProtectedRoute>
               <div className="flex h-screen">
-                <ArchiveSidebar />
+                <Sidebar mode="archive" />
                 <div className="flex-1 bg-slate-100 p-4">
                     {error && (
                     <div className="mb-3">
@@ -115,40 +119,70 @@ export default function ArchivePage()
                     </div>
                     )}
                     <div className="font-[Inter] h-full bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col">
-                        <div className="border-b px-6 py-4 bg-white flex justify-between items-center">
-                            <div>
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-xl font-bold">
-                                        Archived Chats
-                                    </h2>
-                                    {
-                                        conversations.length > 0 &&
-                                        (
-                                            <button
-                                                onClick={() => setShowDeleteAllModal(true)}
-                                                className="cursor-pointer bg-red-500  hover:bg-red-600 text-white ml-2 px-4 py-2 rounded-xl">
-                                                🗑 Empty Archive
-                                            </button>
-                                        )
-                                    }
+                        <div className="border-b border-slate-200 px-8 py-6 flex items-center justify-between">
 
-                                </div>
+                            <div>
+
+                                <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                                    📦 Archived Conversations
+                                </h1>
+
+                                <p className="text-slate-500 mt-2">
+                                    {conversations.length} archived conversations
+                                </p>
+
                             </div>
+
+                            {conversations.length > 0 && (
+
+                                <button
+                                    onClick={() => setShowDeleteAllModal(true)}
+                                    className="cursor-pointer flex items-center gap-2 rounded-xl bg-red-500 px-5 py-3 text-white hover:bg-red-600 transition shadow"
+                                >
+                                    🗑 Empty Archive
+                                </button>
+
+                            )}
+
                         </div>
                         {
                             conversations.length === 0 ?
                             (
-                                <div className="flex items-center justify-center h-64">
+                                <div className="flex flex-1 items-center justify-center">
+
                                     <div className="text-center">
-                                        <div className="text-6xl mb-4">
+
+                                        <div className="text-7xl mb-6">
                                             📦
                                         </div>
-                                        <div className="text-xl font-semibold text-gray-600">
-                                            No archived chats found
-                                        </div>
-                                        <div className="text-gray-400 mt-2">
-                                            Your archived conversations will appear here.
-                                        </div>
+
+                                        <h2 className="text-3xl font-bold text-slate-700">
+                                            Archive is empty
+                                        </h2>
+
+                                        <p className="mt-3 text-slate-500">
+                                            Conversations you archive will appear here.
+                                        </p>
+
+                                        <button
+                                            onClick={()=>router.push("/")}
+                                            className="
+                                                cursor-pointer
+                                                mt-8
+                                                rounded-xl
+                                                bg-gradient-to-r
+                                                from-blue-500
+                                                via-purple-500
+                                                to-pink-500
+                                                px-6
+                                                py-3
+                                                text-white
+                                                font-semibold
+                                            "
+                                        >
+                                            ← Back to Chat
+                                        </button>
+
                                     </div>
 
                                 </div>
@@ -187,14 +221,14 @@ export default function ArchivePage()
 
                             <button
                                 onClick={() => setShowDeleteAllModal(false)}
-                                className="px-4 py-2 border rounded-xl"
+                                className="cursor-pointer px-4 py-2 border rounded-xl"
                             >
                                 Cancel
                             </button>
 
                             <button
                                 onClick={emptyArchive}
-                                className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
+                                className="cursor-pointer px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
                             >
                                 Delete All
                             </button>

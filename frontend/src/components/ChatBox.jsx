@@ -17,6 +17,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { HandThumbUpIcon,HandThumbDownIcon, PaperClipIcon } from "@heroicons/react/24/outline";
 import {HandThumbUpIcon as HandThumbUpSolid, HandThumbDownIcon as HandThumbDownSolid } from "@heroicons/react/24/solid";
+import WelcomeScreen from "@/components/WelcomeScreen";
 import "katex/dist/katex.min.css";
 
 export default function ChatBox() {
@@ -174,6 +175,14 @@ export default function ChatBox() {
   };
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const handleSuggestion = async (text) => {
+
+      setQuestion(text);
+
+      await askAI(text);
+
+  };
 
   const askAI = async (voiceQuestion = null, parentUserMessageId = null, responseVersion = 1, replaceAssistantId = null) => {
     
@@ -872,8 +881,8 @@ export default function ChatBox() {
     // Remove everything after this message
     updatedMessages = updatedMessages.slice(0, index);
 
-    console.log("AFTER");
-    console.log(updatedMessages);
+    // console.log("AFTER");
+    // console.log(updatedMessages);
 
     setMessages(updatedMessages);
 
@@ -1122,374 +1131,375 @@ const switchVersion = (assistantMessage, direction) =>
 
         </div>
 
-        {messages && (
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {messages.length === 0 ? (
+                isLoadingLocal == false && (
+                    /* Welcome Screen */
+                    <WelcomeScreen askSuggestionToAI={handleSuggestion} />
+                )
+            ) : (
+              <>
+              {messages && (
 
-          <div className="flex-1 overflow-y-auto px-6 py-6 bg-[#f9f7f3]">
-              
-              {messages.map((msg, index) => (                
-                  
-                  <motion.div key={index} initial={{ opacity: 0, y: 10}} animate={{ opacity: 1, y: 0 }} transition={{duration: 0.2}}>
-                    <div key={index} className={msg.role === "user"? "text-right": "text-left"}>
-                      <div
-                          className={
-                          msg.role === "user"
-                              ? "group inline-block mt-3 mb-1 px-5 py-1  max-w-[80%] text-[15px] leading-7"
-                              : "group bg-white/90 backdrop-blur-md border border-gray-100 border-gray-200 text-black inline-block px-5 py-4 rounded-3xl w-full shadow-sm text-[15px] leading-7"
-                          }
-                      >
-                        {
-                          editingIndex === index ?
-                          (
-                            <div>
-                                <textarea
-                                    value={editingText}
-                                    onChange={(e)=>setEditingText(e.target.value)}
-                                    className="w-full border rounded-xl p-1"
-                                />
+                <div className="flex-1 overflow-y-auto px-6 py-6 bg-[#f9f7f3]">
+                    
+                    {messages.map((msg, index) => (                
+                        
+                        <motion.div key={index} initial={{ opacity: 0, y: 10}} animate={{ opacity: 1, y: 0 }} transition={{duration: 0.2}}>
+                          <div key={index} className={msg.role === "user"? "text-right": "text-left"}>
+                            <div
+                                className={
+                                msg.role === "user"
+                                    ? "group inline-block mt-3 mb-1 px-5 py-1  max-w-[80%] text-[15px] leading-7"
+                                    : "group bg-white/90 backdrop-blur-md border border-gray-100 border-gray-200 text-black inline-block px-5 py-4 rounded-3xl w-full shadow-sm text-[15px] leading-7"
+                                }
+                            >
+                              {
+                                editingIndex === index ?
+                                (
+                                  <div>
+                                      <textarea
+                                          value={editingText}
+                                          onChange={(e)=>setEditingText(e.target.value)}
+                                          className="w-full rounded-2xl bg-blue-200 text-black px-5 py-3 border-2 border-blue-400 resize-none outline-none" />
 
-                                <div className="mt-2 flex gap-2">
+                                      <div className="flex justify-end gap-2 mt-3">
 
-                                    <button
-                                        onClick={() => saveEditedPrompt(index)}
-                                        className="bg-blue-500 text-white px-4 py-2 rounded-xl"
-                                    >
-                                        Save
-                                    </button>
+                                          <button
+                                              onClick={() => setEditingIndex(null)}
+                                              className="cursor-pointer px-4 py-2 rounded-lg hover:bg-slate-100"
+                                          >
+                                              Cancel
+                                          </button>
 
-                                    <button
-                                        onClick={() => setEditingIndex(null)}
-                                        className="bg-gray-300 px-4 py-2 rounded-xl"
-                                    >
-                                        Cancel
-                                    </button>
+                                          <button
+                                              onClick={() => saveEditedPrompt(index)}
+                                              className="cursor-pointer px-4 py-2 rounded-lg bg-black text-white hover:bg-slate-800"
+                                          >
+                                              Save
+                                          </button>
 
-                                </div>
-                            </div>
-                          )
-                          :
-                          (                            
-                            <div className="text-white prose prose-lg max-w-none">
+                                      </div>
+                                  </div>
 
-                              <>
-                              {msg.image_url && (
-                                  <img
-                                      src={msg.image_url}
-                                      alt="Generated"
-                                      className="mt-3 rounded-xl border shadow max-w-full"
-                                      loading="lazy"
-                                  />
+                                  
+                                )
+                                :
+                                (                            
+                                  <div className="text-white prose prose-lg max-w-none">
 
-                              )}
-                              {msg.content && (
-                              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}
-                                            components={{
-                                                h1: ({ children }) => (
-                                                    <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900">
-                                                        {children}
-                                                    </h1>
-                                                ),
-                                                h2: ({ children }) => (
-                                                    <h2 className="text-2xl font-semibold mt-7 mb-3 text-gray-800">
-                                                        {children}
-                                                    </h2>
-                                                ),
-                                                h3: ({ children }) => (
-                                                    <h3 className="text-xl font-semibold mt-6 mb-2 text-gray-800">
-                                                        {children}
-                                                    </h3>
-                                                ),
-                                                p: ({ children }) => (
-                                                    <div className={
-                                                          msg.role === "user"
-                                                              ? "leading-8 text-[15px] text-gray-800 mb-1 break-words rounded-3xl shadow-sm px-3 py-1"
-                                                              : "leading-8 text-[15px] text-gray-800 mb-1 break-words"
-                                                          }>
-                                                      {children}
-                                                    </div>
-                                                ),
-                                                ul: ({ children }) => (
-                                                    <ul className="list-disc ml-6 mb-4 space-y-2">
-                                                        {children}
-                                                    </ul>
-                                                ),
-                                                ol: ({ children }) => (
-                                                    <ol className="list-decimal ml-6 mb-4 space-y-2">
-                                                        {children}
-                                                    </ol>
-                                                ),
-                                                li: ({ children }) => (
-                                                    <li className="leading-7 text-gray-800">
-                                                        {children}
-                                                    </li>
-                                                ),
-                                                blockquote: ({ children }) => (
-                                                    <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 my-4">
-                                                        {children}
-                                                    </blockquote>
-                                                ),
-                                                img: ({ src, alt }) => (
-                                                  <div className="my-6">
-                                                      <img src={src} alt={alt} className="rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300 max-w-full" />
-                                                      {alt && (
-                                                          <div className="text-center text-sm text-gray-500 mt-2">
-                                                              {alt}
-                                                          </div>
-                                                      )}
-                                                  </div>
-                                              ),
-                                                code({ inline, className, children }) {
-
-                                                    const text = String(children).replace(/\n$/, "");
-
-                                                    /*
-                                                    -----------------------------
-                                                    CHART BLOCK
-                                                    -----------------------------
-                                                    */
-                                                    if (className === "language-chart")
-                                                    {
-                                                      try 
-                                                      {
-                                                          const chartData = JSON.parse(text);
-
-                                                          return (
-                                                              <CustomChart data={chartData} />
-                                                          );
-
-                                                      }
-                                                      catch
-                                                      {
-                                                          return (
-                                                              <div className="text-red-500 text-sm">
-                                                                  Invalid chart data
-                                                              </div>
-                                                          );
-                                                      }
-                                                    }
-
-                                                    /*
-                                                      -----------------------------
-                                                      CODE SYNTAX HIGHLIGHTING
-                                                      -----------------------------
-                                                      */
-
-                                                    const match = /language-(\w+)/.exec(className || "");
-                                                    if(!inline && match)
-                                                    {
-                                                      return (
-                                                        <div className="relative rounded-xl overflow-hidden">
-                                                          <div className="bg-slate-800 px-4 py-2 flex justify-between text-sm text-white">
-                                                              <span>{match[1].toUpperCase()}</span>
-                                                              <button className="cursor-pointer" 
-                                                                      onClick={() => {
-                                                                        navigator.clipboard.writeText(text);
-                                                                        toast.success("Copied!");
-                                                                      }}
-                                                              >
-                                                                  📋 Copy
-                                                              </button>
-                                                          </div>
-                                                          
-                                                            <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div"
-                                                                customStyle={{
-                                                                    borderRadius: "16px",
-                                                                    padding: "20px",
-                                                                    fontSize: "14px",
-                                                                    marginTop: "20px",
-                                                                    marginBottom: "20px"
-                                                                }}
-                                                            >
-                                                                {text}
-                                                            </SyntaxHighlighter>
-                                                        </div>
-                                                      );
-                                                    }
-
-                                                    /*
-                                                    -----------------------------
-                                                    INLINE CODE
-                                                    -----------------------------
-                                                    */
-                                                    if (inline) {
-
-                                                        return (
-                                                          <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm">
-                                                            {children}
-                                                          </code>
-                                                        );
-                                                    }
-
-                                                    return (
-                                                      <code className={className}>
-                                                        {children}
-                                                      </code>
-                                                    );
-
-                                                },
-
-                                                // pre: ({ children }) => (
-                                                //     <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
-                                                //         {children}
-                                                //     </pre>
-                                                // ),
-                                                pre: ({ children }) => (
-                                                  <pre className="whitespace-pre-wrap break-words overflow-x-auto bg-slate-900 p-4 rounded-xl">
-                                                    {children}
-                                                  </pre>
-                                                ),
-                                                table: ({ children }) => (
-                                                    <div className="overflow-x-auto my-6">
-                                                        <table className="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm">
-                                                            {children}
-                                                        </table>
-                                                    </div>
-                                                ),
-                                                thead: ({ children }) => (
-                                                    <thead className="bg-gray-100">
-                                                        {children}
-                                                    </thead>
-                                                ),
-                                                th: ({ children }) => (
-                                                    <th className="bg-gray-100 px-4 py-3 border-b text-left font-semibold">
-                                                        {children}
-                                                    </th>
-                                                ),
-                                                td: ({ children }) => (
-                                                    <td className="px-4 py-3 border-b text-gray-700">
-                                                        {children}
-                                                    </td>
-                                                )
-                                            }}
-                                        >
-                                            {msg.content}
-                              </ReactMarkdown>
-                              )}
-
-                              </>
-
-                                {msg.role === "user" && (
-                                  <div className="flex justify-end mt-0">
-                                      <button
-                                        title="Copy"
-                                        className="cursor-pointer opacity-0 group-hover:opacity-100 group-hover:opacity-100 text-gray-400 hover:text-gray-700 text-sm"
-                                        onClick={() => {copyMessage(msg.content);}}
-                                    >📋</button>
-
-                                      <button title="Edit Prompt"
-                                          onClick={() => {
-                                              setEditingIndex(index);
-                                              setEditingText(msg.content);
-                                          }}
-                                          className="cursor-pointer opacity-0 group-hover:opacity-100 group-hover:opacity-100 text-gray-400 hover:text-gray-700 ml-2"
-                                      >
-                                          ✏
-                                      </button>
-                                    </div>
-                                )}
-                              
-                              {msg.role === "assistant" && (
-
-                                <div className="flex items-center gap-2 mt-2">
-                                    <button title="Copy"
-                                        className="cursor-pointer text-gray-400 hover:text-gray-700 text-sm"
-                                        onClick={() => {copyMessage(msg.content);}}
-                                    >📋</button>
-
-                                    {/* <button title="Regenerate"
-                                        className="cursor-pointer text-gray-400 hover:text-gray-700 ml-2"
-                                        onClick={() => regenerateResponse(msg)}
-                                    >🔄</button> */}
-
-                                    <button className="cursor-pointer" title="Like"
-                                        onClick={() => submitFeedback(msg.id, "like")}
-                                    >
-                                      {
-                                          msg.feedback === "like"
-                                          ?
-                                          <HandThumbUpSolid className="w-5 h-5 text-green-600"/>
-                                          :
-                                          <HandThumbUpIcon className="w-5 h-5 text-gray-400"/>
-                                      }
-                                    </button>
-
-                                    <button className="cursor-pointer" title="Dislike"
-                                        onClick={() => {
-                                            setSelectedMessageId(msg.id);
-                                            setFeedbackModalOpen(true);
-                                        }}
-                                    >
-                                      {
-                                          msg.feedback === "dislike"
-                                          ?
-                                          <HandThumbDownSolid className="w-5 h-5 text-red-600"/>
-                                          :
-                                          <HandThumbDownIcon className="w-5 h-5 text-gray-400"/>
-                                      }
-                                    </button>
+                                    <>
                                     
-                                    {(!isSpeaking || (isSpeaking && speakingMessageId != msg.id) || speakingMessageId == null) && (
-                                    <button onClick={() => speakText(msg.id, msg.content)} title="Play" 
-                                    className="cursor-pointer text-gray-500 hover:text-black">▶</button>
+                                    {msg.image_url && (
+                                        <img
+                                            src={msg.image_url}
+                                            alt="Generated"
+                                            className="mt-3 rounded-xl border shadow max-w-full"
+                                            loading="lazy"
+                                        />
+
                                     )}
-                                    
-                                    {speakingMessageId == msg.id && isSpeaking && (
-                                      <>
-                                        <button title={isPaused ? "Resume" : "Pause"} className="cursor-pointer text-gray-500 hover:text-black"
-                                         onClick={
-                                                isPaused
-                                                    ? resumeSpeaking
-                                                    : pauseSpeaking
-                                            }
-                                        >
-                                            {isPaused ? "▶" : "⏸"}
-                                        </button>
+                                    {msg.content && ( /<\/?(div|table|h[1-6]|img|ul|ol|li|p|a|b|br|hr)/i.test(msg.content)
 
-                                        <button className="cursor-pointer text-gray-500 hover:text-black"
-                                            onClick={stopSpeaking}
-                                        >
-                                            ⏹
-                                        </button>
-                                      </>
+                                    ?
+
+                                      <div
+                                          className="prose prose-lg max-w-none"
+                                          dangerouslySetInnerHTML={{
+                                              __html: msg.content
+                                          }}
+                                      />
+
+                                    :
+
+                                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}
+                                                    components={{
+                                                        h1: ({ children }) => (
+                                                            <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900">
+                                                                {children}
+                                                            </h1>
+                                                        ),
+                                                        h2: ({ children }) => (
+                                                            <h2 className="text-2xl font-semibold mt-7 mb-3 text-gray-800">
+                                                                {children}
+                                                            </h2>
+                                                        ),
+                                                        h3: ({ children }) => (
+                                                            <h3 className="text-xl font-semibold mt-6 mb-2 text-gray-800">
+                                                                {children}
+                                                            </h3>
+                                                        ),
+                                                        p: ({ children }) => (
+                                                            <div className={
+                                                                  msg.role === "user"
+                                                                      ? "leading-8 text-[15px] text-gray-800 mb-1 break-words rounded-3xl shadow-sm px-3 py-1"
+                                                                      : "leading-8 text-[15px] text-gray-800 mb-1 break-words"
+                                                                  }>
+                                                              {children}
+                                                            </div>
+                                                        ),
+                                                        ul: ({ children }) => (
+                                                            <ul className="list-disc ml-6 mb-4 space-y-2">
+                                                                {children}
+                                                            </ul>
+                                                        ),
+                                                        ol: ({ children }) => (
+                                                            <ol className="list-decimal ml-6 mb-4 space-y-2">
+                                                                {children}
+                                                            </ol>
+                                                        ),
+                                                        li: ({ children }) => (
+                                                            <li className="leading-7 text-gray-800">
+                                                                {children}
+                                                            </li>
+                                                        ),
+                                                        blockquote: ({ children }) => (
+                                                            <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 my-4">
+                                                                {children}
+                                                            </blockquote>
+                                                        ),
+                                                        img: ({ src, alt }) => (
+                                                          <div className="my-6">
+                                                              <img src={src} alt={alt} className="rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300 max-w-full" />
+                                                              {alt && (
+                                                                  <div className="text-center text-sm text-gray-500 mt-2">
+                                                                      {alt}
+                                                                  </div>
+                                                              )}
+                                                          </div>
+                                                      ),
+                                                        code({ inline, className, children }) {
+
+                                                            const text = String(children).replace(/\n$/, "");
+
+                                                            /*
+                                                            -----------------------------
+                                                            CHART BLOCK
+                                                            -----------------------------
+                                                            */
+                                                            if (className === "language-chart")
+                                                            {
+                                                              try 
+                                                              {
+                                                                  const chartData = JSON.parse(text);
+
+                                                                  return (
+                                                                      <CustomChart data={chartData} />
+                                                                  );
+
+                                                              }
+                                                              catch
+                                                              {
+                                                                  return (
+                                                                      <div className="text-red-500 text-sm">
+                                                                          Invalid chart data
+                                                                      </div>
+                                                                  );
+                                                              }
+                                                            }
+
+                                                            /*
+                                                              -----------------------------
+                                                              CODE SYNTAX HIGHLIGHTING
+                                                              -----------------------------
+                                                              */
+
+                                                            const match = /language-(\w+)/.exec(className || "");
+                                                            if(!inline && match)
+                                                            {
+                                                              return (
+                                                                <div className="relative rounded-xl overflow-hidden">
+                                                                  <div className="bg-slate-800 px-4 py-2 flex justify-between text-sm text-white">
+                                                                      <span>{match[1].toUpperCase()}</span>
+                                                                      <button className="cursor-pointer" 
+                                                                              onClick={() => {
+                                                                                navigator.clipboard.writeText(text);
+                                                                                toast.success("Copied!");
+                                                                              }}
+                                                                      >
+                                                                          📋 Copy
+                                                                      </button>
+                                                                  </div>
+                                                                  
+                                                                    <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div"
+                                                                        customStyle={{
+                                                                            borderRadius: "16px",
+                                                                            padding: "20px",
+                                                                            fontSize: "14px",
+                                                                            marginTop: "20px",
+                                                                            marginBottom: "20px"
+                                                                        }}
+                                                                    >
+                                                                        {text}
+                                                                    </SyntaxHighlighter>
+                                                                </div>
+                                                              );
+                                                            }
+
+                                                            /*
+                                                            -----------------------------
+                                                            INLINE CODE
+                                                            -----------------------------
+                                                            */
+                                                            if (inline) {
+
+                                                                return (
+                                                                  <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm">
+                                                                    {children}
+                                                                  </code>
+                                                                );
+                                                            }
+
+                                                            return (
+                                                              <code className={className}>
+                                                                {children}
+                                                              </code>
+                                                            );
+
+                                                        },
+
+                                                        // pre: ({ children }) => (
+                                                        //     <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
+                                                        //         {children}
+                                                        //     </pre>
+                                                        // ),
+                                                        pre: ({ children }) => (
+                                                          <pre className="whitespace-pre-wrap break-words overflow-x-auto bg-slate-900 p-4 rounded-xl">
+                                                            {children}
+                                                          </pre>
+                                                        ),
+                                                        table: ({ children }) => (
+                                                            <div className="overflow-x-auto my-6">
+                                                                <table className="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm">
+                                                                    {children}
+                                                                </table>
+                                                            </div>
+                                                        ),
+                                                        thead: ({ children }) => (
+                                                            <thead className="bg-gray-100">
+                                                                {children}
+                                                            </thead>
+                                                        ),
+                                                        th: ({ children }) => (
+                                                            <th className="bg-gray-100 px-4 py-3 border-b text-left font-semibold">
+                                                                {children}
+                                                            </th>
+                                                        ),
+                                                        td: ({ children }) => (
+                                                            <td className="px-4 py-3 border-b text-gray-700">
+                                                                {children}
+                                                            </td>
+                                                        )
+                                                    }}
+                                                >
+                                                    {msg.content}
+                                      </ReactMarkdown>
+                                    )}
+
+                                    </>
+
+                                      {msg.role === "user" && (
+                                        <div className="flex justify-end mt-0">
+                                            <button
+                                              title="Copy"
+                                              className="cursor-pointer opacity-0 group-hover:opacity-100 group-hover:opacity-100 text-gray-400 hover:text-gray-700 text-sm"
+                                              onClick={() => {copyMessage(msg.content);}}
+                                          >📋</button>
+
+                                            <button title="Edit Prompt"
+                                                onClick={() => {
+                                                    setEditingIndex(index);
+                                                    setEditingText(msg.content);
+                                                }}
+                                                className="cursor-pointer opacity-0 group-hover:opacity-100 group-hover:opacity-100 text-gray-400 hover:text-gray-700 ml-2"
+                                            >
+                                                ✏
+                                            </button>
+                                          </div>
                                       )}
-                                      
+                                    
+                                    {msg.content && msg.role === "assistant" && (
 
-                                </div>
+                                      <div className="flex items-center gap-2 mt-2">
+                                          <button title="Copy"
+                                              className="cursor-pointer text-gray-400 hover:text-gray-700 text-sm"
+                                              onClick={() => {copyMessage(msg.content);}}
+                                          >📋</button>
+
+                                          {/* <button title="Regenerate"
+                                              className="cursor-pointer text-gray-400 hover:text-gray-700 ml-2"
+                                              onClick={() => regenerateResponse(msg)}
+                                          >🔄</button> */}
+
+                                          <button className="cursor-pointer" title="Like"
+                                              onClick={() => submitFeedback(msg.id, "like")}
+                                          >
+                                            {
+                                                msg.feedback === "like"
+                                                ?
+                                                <HandThumbUpSolid className="w-5 h-5 text-green-600"/>
+                                                :
+                                                <HandThumbUpIcon className="w-5 h-5 text-gray-400"/>
+                                            }
+                                          </button>
+
+                                          <button className="cursor-pointer" title="Dislike"
+                                              onClick={() => {
+                                                  setSelectedMessageId(msg.id);
+                                                  setFeedbackModalOpen(true);
+                                              }}
+                                          >
+                                            {
+                                                msg.feedback === "dislike"
+                                                ?
+                                                <HandThumbDownSolid className="w-5 h-5 text-red-600"/>
+                                                :
+                                                <HandThumbDownIcon className="w-5 h-5 text-gray-400"/>
+                                            }
+                                          </button>
+                                          
+                                          {(!isSpeaking || (isSpeaking && speakingMessageId != msg.id) || speakingMessageId == null) && (
+                                          <button onClick={() => speakText(msg.id, msg.content)} title="Play" 
+                                          className="cursor-pointer text-gray-500 hover:text-black">▶</button>
+                                          )}
+                                          
+                                          {speakingMessageId == msg.id && isSpeaking && (
+                                            <>
+                                              <button title={isPaused ? "Resume" : "Pause"} className="cursor-pointer text-gray-500 hover:text-black"
+                                              onClick={
+                                                      isPaused
+                                                          ? resumeSpeaking
+                                                          : pauseSpeaking
+                                                  }
+                                              >
+                                                  {isPaused ? "▶" : "⏸"}
+                                              </button>
+
+                                              <button className="cursor-pointer text-gray-500 hover:text-black"
+                                                  onClick={stopSpeaking}
+                                              >
+                                                  ⏹
+                                              </button>
+                                            </>
+                                            )}
+                                            
+
+                                      </div>
+                                      )
+                                    }
+                                  </div>
                                 )
                               }
-
-                              {/* {
-                                msg.role === "assistant" &&
-                                msg.parent_user_message_id &&
-                                responseBranches[msg.parent_user_message_id] &&
-                                (
-                                    <div className="flex items-center gap-2 mt-3">
-                                        <button disabled={responseBranches[msg.parent_user_message_id].current <= 1} onClick={() =>switchVersion(msg, -1)}>
-                                            ◀
-                                        </button>
-                                        <span>
-                                            {
-                                                responseBranches[msg.parent_user_message_id].current
-                                            }
-                                            /
-                                            {
-                                                responseBranches[msg.parent_user_message_id].versions.length
-                                            }
-                                        </span>
-                                        <button disabled={responseBranches[msg.parent_user_message_id].current >= responseBranches[msg.parent_user_message_id].versions.length} onClick={() =>switchVersion(msg, 1)}>
-                                            ▶
-                                        </button>
-                                    </div>
-                                )
-                            } */}
                             </div>
-                          )
-                        }
-                      </div>
+                          </div>
+                        </motion.div>
+                    ))}
                     </div>
-                  </motion.div>
-              ))}
-              </div>
-        )}
+              )}
+              </>
+            )}
+        </div>
 
         <div ref={messagesEndRef}></div>
 
@@ -1545,7 +1555,7 @@ const switchVersion = (assistantMessage, direction) =>
 
             <button
               onClick={() => setSelectedFile(null)}
-              className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 text-red-500 hover:text-red-700"
+              className="cursor-pointer absolute -top-2 -right-2 bg-white rounded-full shadow p-1 text-red-500 hover:text-red-700"
             >
               ✕
             </button>
@@ -1562,7 +1572,7 @@ const switchVersion = (assistantMessage, direction) =>
                 className="w-full"
                 src={URL.createObjectURL(selectedFile)}
               />
-              <button onClick={() => setSelectedFile(null)} className="text-red-500 hover:text-red-700">✕</button>
+              <button onClick={() => setSelectedFile(null)} className="cursor-pointer text-red-500 hover:text-red-700">✕</button>
             </div>
             
             ) : (
@@ -1585,7 +1595,7 @@ const switchVersion = (assistantMessage, direction) =>
 
             <button
               onClick={() => setSelectedFile(null)}
-              className="text-red-500 hover:text-red-700"
+              className="cursor-pointer text-red-500 hover:text-red-700"
             >
               ✕
             </button>
@@ -1666,7 +1676,7 @@ const switchVersion = (assistantMessage, direction) =>
           <button
             type="button"
             onClick={() => fileInputRef.current.click()}
-            className="absolute left-2 bottom-3 text-gray-500 hover:text-black"
+            className="cursor-pointer absolute left-2 bottom-3 text-gray-500 hover:text-black"
           >
             <PaperClipIcon className="w-5 h-5 cursor-pointer" />
           </button>
@@ -1685,11 +1695,11 @@ const switchVersion = (assistantMessage, direction) =>
         </div>
 
         {speechSupported ? (
-          <button onClick={startListening} className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90"
+          <button onClick={startListening} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90"
             title="Speak">🎤</button>
           ) : (
           <button onClick={isRecording ? stopRecording : startRecording }
-                className={`rounded-full w-12 h-12 flex items-center justify-center ${
+                className={`cursor-pointer rounded-full w-12 h-12 flex items-center justify-center ${
                             isRecording
                               ? "bg-red-500 text-white"
                               : "bg-gray-200"
@@ -1702,16 +1712,16 @@ const switchVersion = (assistantMessage, direction) =>
             (
               isGenerating ?
 
-              <button title="Stop" onClick={stopGenerating} className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
+              <button title="Stop" onClick={stopGenerating} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
                   ■
               </button>
               :
-              <button disabled className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
+              <button disabled className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               </button>
             )
             :
-            <button title="Send" onClick={() => askAI()} className="bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
+            <button title="Send" onClick={() => askAI()} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
                 ➤
             </button>
           }
@@ -1797,7 +1807,7 @@ const switchVersion = (assistantMessage, direction) =>
             <div className="flex justify-end gap-3 mt-5">
 
                 <button
-                    className="px-4 py-2 rounded-xl bg-gray-300"
+                    className="cursor-pointer px-4 py-2 rounded-xl bg-gray-300"
                     onClick={()=>{
                         setFeedbackModalOpen(false);
                     }}
@@ -1806,7 +1816,7 @@ const switchVersion = (assistantMessage, direction) =>
                 </button>
 
                 <button
-                    className="px-4 py-2 rounded-xl bg-red-500 text-white"
+                    className="cursor-pointer px-4 py-2 rounded-xl bg-red-500 text-white"
                     onClick={saveFeedback}
                 >
                     Submit
