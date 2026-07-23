@@ -16,7 +16,10 @@ class StreamContext:
 
     result_generated: bool = False
 
-    skip_remaining_ai: bool = False
+    #
+    # Final response already sent
+    #
+    finished: bool = False
 
     progress: ProgressState = field(default_factory=ProgressState)
 

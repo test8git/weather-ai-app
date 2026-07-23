@@ -19,6 +19,9 @@ class StreamRunner:
 
         event_type = event.get("event", "")
 
+        if ctx.finished and event["event"] != "on_chain_end":
+            return []
+
         #
         # ----------------------------------------
         # CHAT MODEL START

@@ -9,9 +9,64 @@ from common.sse import sse_event, sse_step
 
 class ToolRenderer:
 
+    @staticmethod
+    def normalize_tool_result(result):
+
+        #
+        # ToolMessage
+        #
+        if isinstance(result, ToolMessage):
+            result = result.content
+
+        #
+        # MCP returns a list
+        #
+        if isinstance(result, list):
+
+            if not result:
+                return None
+
+            result = result[0]
+
+        #
+        # MCP item
+        #
+        if isinstance(result, dict):
+
+            #
+            # {
+            #   "type":"text",
+            #   "text":"{...json...}"
+            # }
+            #
+            if "text" in result:
+
+                text = result["text"]
+
+                try:
+                    return json.loads(text)
+
+                except Exception:
+                    return {"text": text}
+
+            return result
+
+        #
+        # plain string
+        #
+        if isinstance(result, str):
+
+            try:
+                return json.loads(result)
+
+            except Exception:
+                return {"text": result}
+
+        return None
+
     async def render_event(self, event, ctx: StreamContext):
 
-        output = event["data"].get("output")
+        output = self.normalize_tool_result(event["data"].get("output"))
 
         if output is None:
             return False, []
@@ -213,7 +268,7 @@ class ToolRenderer:
 
             if tool_result.get("action") == "send_email":
 
-                ctx.skip_next_ai_message = True
+                ctx.finished = True
 
                 events.append(
                     {

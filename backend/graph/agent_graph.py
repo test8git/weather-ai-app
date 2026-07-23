@@ -514,18 +514,6 @@ def should_use_file_reader(
     )
 
 
-# ============================================================
-# Error Helper
-# ============================================================
-
-def format_exception(
-    e: Exception,
-):
-
-    traceback.print_exc()
-
-    return format_ai_error(e)        
-
 async def run_agent_stream(
     current_question,
     history,
@@ -621,10 +609,13 @@ async def run_agent_stream(
             },
             version="v2",
         ):
+            # print("\n" + "=" * 80)
+            # print(event["event"])
 
-            if event["event"] == "on_tool_end":
-                print("ON TOOL END : ")
-                print(event)
+            # if "data" in event:
+            #     print(event["data"])
+
+            # print("=" * 80)
 
             #
             # Let StreamRunner  process ONE message
@@ -654,7 +645,7 @@ async def run_agent_stream(
 
                 yield event["sse"]
             
-            if ctx.result_generated:
+            if ctx.result_generated or ctx.finished:
                 break
 
         #

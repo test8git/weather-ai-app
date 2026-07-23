@@ -14,8 +14,8 @@ class AIRenderer:
         # ToolRenderer already produced
         # the final answer.
         #
-        if ctx.skip_remaining_ai:
-            return events
+        if ctx.finished:
+            return []
 
         #
         # LangGraph v1.2
