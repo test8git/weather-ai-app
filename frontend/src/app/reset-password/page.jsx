@@ -1,5 +1,6 @@
 "use client";
 
+import AuthLayout from "@/components/AuthLayout";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -11,31 +12,80 @@ import Link from "next/link";
 export default function ResetPasswordPage() {
 
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const { setGlobalLoading } = useLoading();
 
   const router = useRouter();
+  
+  const validatePassword = (password) => {
+        const passwordRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()_\-+=\[\]{}|\\:;"'<>,./~`])[A-Za-z\d@$!%*?&^#()_\-+=\[\]{}|\\:;"'<>,./~`]{8,}$/;
+
+        return passwordRegex.test(password);
+    };
+
+  const passwordChecks = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /\d/.test(password),
+        special: /[^A-Za-z0-9]/.test(password),
+    };
 
   const updatePassword = async () => {
     try 
     {
-      setGlobalLoading(true);
-      const { error } =
-        await supabase.auth.updateUser({
-          password
-        });
+        // Password
 
-      if (error) {
+        if(password === ""){
+            toast.error("Please enter your password.");
+            return;
+        }
 
-        toast.error(error.message);
+        // Confirm Password
+        if(confirmPassword === ""){
 
-        return;
-      }
+            toast.error("Please confirm your password.");
 
-      toast.success(
-        "Password updated successfully"
-      );
+            return;
 
-      router.push("/login");
+        }
+
+        // Match
+        if(password !== confirmPassword){
+
+            toast.error("Passwords do not match.");
+
+            return;
+
+        }
+
+        //Validation
+        if (!validatePassword(password)) {
+            toast.error(
+                "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character."
+            );
+            return;
+        }
+
+        setGlobalLoading(true);
+        const { error } =
+            await supabase.auth.updateUser({
+            password
+            });
+
+        if (error) {
+
+            toast.error(error.message);
+
+            return;
+        }
+
+        toast.success(
+            "Password updated successfully"
+        );
+
+        router.push("/login");
     }
     finally {
       setGlobalLoading(false);
@@ -44,152 +94,137 @@ export default function ResetPasswordPage() {
 
   return (
 
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-700 via-purple-600 to-pink-500">
+    <AuthLayout
+            icon="🔐"
+            title="Reset Password"
+            subtitle="Create a strong password for your account."
+        >
 
-    {/* Background Decorations */}
+            {/* New Password */}
 
-    <div className="absolute w-96 h-96 bg-pink-400 rounded-full blur-[120px] opacity-25 top-[-100px] left-[-100px]" />
+            <div className="relative">
 
-    <div className="absolute w-96 h-96 bg-indigo-400 rounded-full blur-[120px] opacity-25 bottom-[-100px] right-[-100px]" />
+                <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
 
-    {/* Card */}
+                <input
+                    type="password"
+                    placeholder="New Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="
+                        w-full
+                        h-14
+                        border
+                        rounded-xl
+                        pl-12
+                        pr-4
+                        text-base
+                        outline-none
+                        focus:border-indigo-500
+                    "
+                />
 
-    <div
-        className="
-            relative
-            w-full
-            max-w-md
-            rounded-3xl
-            border
-            border-white/20
-            bg-white/15
-            backdrop-blur-xl
-            shadow-2xl
-            p-10
-        "
-    >
-
-        {/* Logo */}
-
-        <div className="text-center">
-
-            <div className="text-6xl mb-2">
-                🔐
             </div>
 
-            <h1 className="text-4xl font-bold text-white">
-                Reset Password
-            </h1>
+            {/* Confirm Password */}
 
-            <p className="text-white/80 mt-2 leading-7">
-                Create a new password for your account.
+            <div className="relative mt-5">
+
+                <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
+
+                <input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="
+                        w-full
+                        h-14
+                        border
+                        rounded-xl
+                        pl-12
+                        pr-4
+                        text-base
+                        outline-none
+                        focus:border-indigo-500
+                    "
+                />
+
+            </div>
+
+            {/* Password Hint */}
+
+            <p className="mt-4 text-sm text-gray-500 leading-6">
+                Password must contain at least
+                <span className="font-semibold text-gray-700">
+                    {" "}8 characters
+                </span>
+                , one uppercase letter, one lowercase letter,
+                one number and one special character.
             </p>
 
-        </div>
+            {/* <div className="mt-4 text-sm space-y-1">
 
-        {/* Password */}
+                <p className={passwordChecks.length ? "text-green-600" : "text-gray-500"}>
+                    ✓ At least 8 characters
+                </p>
 
-        <div className="mt-8 relative">
+                <p className={passwordChecks.uppercase ? "text-green-600" : "text-gray-500"}>
+                    ✓ One uppercase letter
+                </p>
 
-            <span className="absolute left-4 top-4 text-white">
-                <LockClosedIcon className="w-5 h-5" />
-            </span>
+                <p className={passwordChecks.lowercase ? "text-green-600" : "text-gray-500"}>
+                    ✓ One lowercase letter
+                </p>
 
-            <input
-                type="password"
-                placeholder="New Password"
-                value={password}
-                onChange={(e)=>setPassword(e.target.value)}
+                <p className={passwordChecks.number ? "text-green-600" : "text-gray-500"}>
+                    ✓ One number
+                </p>
+
+                <p className={passwordChecks.special ? "text-green-600" : "text-gray-500"}>
+                    ✓ One special character
+                </p>
+
+            </div> */}
+
+            {/* Update Button */}
+
+            <button
+                onClick={updatePassword}
                 className="
+                    cursor-pointer
                     w-full
-                    rounded-xl
-                    bg-white/10
-                    border
-                    border-white/20
+                    mt-6
+                    bg-[#0B1324]
                     text-white
-                    placeholder-white/60
-                    pl-12
-                    pr-4
-                    py-4
-                    outline-none
-                    focus:border-blue-300
-                "
-            />
-
-        </div>
-
-        {/* Password Hint */}
-
-        {/* <p className="mt-3 text-sm text-white/70 leading-6">
-
-            Password should contain at least
-            <span className="font-semibold text-white">
-                {" "}8 characters
-            </span>
-            ,
-            one uppercase letter,
-            one lowercase letter,
-            one number,
-            and one special character.
-
-        </p> */}
-
-        {/* Update Button */}
-
-        <button
-            onClick={updatePassword}
-            className="
-                cursor-pointer
-                mt-6
-                w-full
-                rounded-xl
-                py-4
-                text-lg
-                font-semibold
-                text-white
-                bg-gradient-to-r
-                from-blue-500
-                via-purple-500
-                to-pink-500
-                hover:scale-[1.02]
-                transition
-                duration-200
-                shadow-xl
-            "
-        >
-            Update Password →
-        </button>
-
-        {/* Divider */}
-
-        <div className="flex items-center my-8">
-
-            <div className="flex-1 h-px bg-white/20" />
-
-            <div className="flex-1 h-px bg-white/20" />
-
-        </div>
-
-        {/* Back */}
-
-        <div className="text-center">
-
-            <Link
-                href="/login"
-                className="
-                    text-white
-                    hover:text-blue-200
+                    rounded-lg
+                    py-3
+                    font-semibold
+                    hover:bg-black
                     transition
-                    font-medium
                 "
             >
-                ← Back to Login
-            </Link>
+                Update Password
+            </button>
 
-        </div>
+            {/* Back */}
 
-    </div>
+            <div className="text-center mt-8">
 
-</div>
+                <button
+                    onClick={() => router.push("/login")}
+                    className="
+                        cursor-pointer
+                        text-indigo-600
+                        hover:underline
+                        font-medium
+                    "
+                >
+                    ← Back to Login
+                </button>
+
+            </div>
+
+        </AuthLayout>
   );
 }

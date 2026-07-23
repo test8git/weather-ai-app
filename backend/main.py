@@ -1,6 +1,6 @@
 import os
 import uuid
-from database import init_db
+# # # from database import init_db
 from fastapi import FastAPI, UploadFile, File, Form
 import tempfile
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,14 +11,18 @@ from threading import Thread
 from pydantic import BaseModel
 from graph.agent_graph import run_agent_stream
 from services.transcribe_service import transcribe_audio
-from tools.zapier_tool import send_to_zapier
+from memory.history import load_chat_history
+
+
+# Earlier code...For send to Zaiper using Webhook
+# # # from tools.zapier_tool_using_webhook import send_to_zapier
 
 import asyncio
 
 app = FastAPI()
 
 # initialize DB
-init_db()
+# # # init_db()
 
 # CORS
 app.add_middleware(
@@ -50,35 +54,49 @@ app.add_middleware(
 
 def extract_text(chunk):
 
-    try:
+    # # # try:
 
+    # # #     data = json.loads(chunk)
+
+    # # #     if data["type"] == "message":
+    # # #         return data["content"]
+
+    # # #     elif data["type"] == "image":
+    # # #         return "[Generated Image]"
+
+    # # #     elif data["type"] == "chart":
+    # # #         return "[Chart]"
+
+    # # #     elif data["type"] == "code":
+    # # #         return "[Code]"
+
+    # # #     elif data["type"] == "places":
+    # # #         return "[content]"
+
+    # # #     return "[content]"
+
+    # # # except Exception:
+    # # #     return "[content]"
+
+
+    try:
         data = json.loads(chunk)
 
-        if data["type"] == "message":
-            return data["content"]
+        if data.get("type") == "message":
+            return data.get("content", "")
 
-        elif data["type"] == "image":
-            return "[Generated Image]"
-
-        elif data["type"] == "chart":
-            return "[Chart]"
-
-        elif data["type"] == "code":
-            return "[Code]"
-
-        elif data["type"] == "places":
-            return "[content]"
-
-        return "[content]"
+        return ""
 
     except Exception:
-        return "[content]"
+        return ""
 
 
 class ChatRequest(BaseModel):
     question: str
     session_id: str
+    user_email: str
     selected_model: str
+    conversation_id: str
 
 
 @app.get("/")
@@ -123,7 +141,9 @@ async def transcribe(audio: UploadFile = File(...)):
 async def chat(
     question: str = Form(...),
     session_id: str = Form(...),
+    user_email: str = Form(...),
     selected_model: str = Form(...),
+    conversation_id: str = Form(...),
     file: UploadFile | None = File(None)
 ):
 
@@ -150,15 +170,20 @@ async def chat(
         with open(file_path, "wb") as f:
             f.write(await file.read())
 
+    # Load Conversation history from DB
+    history = load_chat_history(conversation_id)
+
     async def generate():
         answer = ""
 
-        for chunk in run_agent_stream(
-            question,
-            session_id,
-            selected_model,
-            file_path,
-            content_type
+        async for chunk in run_agent_stream(
+            current_question=question,
+            history=history,
+            session_id=session_id,
+            selected_model=selected_model,
+            conversation_id=conversation_id,
+            file_path=file_path,
+            content_type=content_type,
         ):
 
             answer += extract_text(chunk)
@@ -168,24 +193,23 @@ async def chat(
 
             await asyncio.sleep(0.02)
         
-        # print("ANSWER : ")
-        # print(answer)
+        # Earlier code...For send to Zaiper using Webhook
+        # # # responseToZaiper = answer
+        # # # # if len(responseToZaiper) > 300:
+        # # # #     responseToZaiper = responseToZaiper[:300] + "\n\n...(truncated)"
 
-        responseToZaiper = answer
-        # if len(responseToZaiper) > 300:
-        #     responseToZaiper = responseToZaiper[:300] + "\n\n...(truncated)"
-
-        # AI response completed
-        Thread(
-            target=send_to_zapier,
-            args=(
-                question,
-                responseToZaiper,
-                selected_model,
-                session_id
-            ),
-            daemon=True
-        ).start()
+        # # # # AI response completed
+        # # # Thread(
+        # # #     target=send_to_zapier,
+        # # #     args=(
+        # # #         question,
+        # # #         responseToZaiper,
+        # # #         selected_model,
+        # # #         session_id,
+        # # #         user_email
+        # # #     ),
+        # # #     daemon=True
+        # # # ).start()
 
     return StreamingResponse(
         generate(),

@@ -10,7 +10,7 @@ import { useLoading } from "@/context/LoadingContext"
 
 import jsPDF from "jspdf";
 
-import { EllipsisVerticalIcon, MagnifyingGlassIcon, ShareIcon, TrashIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, EllipsisVerticalIcon, MagnifyingGlassIcon, ShareIcon, TrashIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { ArchiveBoxIcon, StarIcon } from "@heroicons/react/24/solid";
 
 import dayjs from "dayjs";
@@ -523,130 +523,214 @@ export default function Sidebar({ mode = "chat" }) {
 
     return (
 
-        <div className="w-80 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-r border-slate-800 flex flex-col text-white">
+        <div className="w-[320px]
+                bg-[#0B1324]
+                text-white
+                flex
+                flex-col
+                shadow-2xl">
 
             {/* Logo */}
-            <div className="p-6 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-2xl shadow-lg">
+            {/* Header */}
+
+            <div className="border-b border-white/10 px-6 py-7">
+
+                <div className="flex items-center gap-4">
+
+                    <div
+                        className="
+                            w-14
+                            h-14
+                            rounded-2xl
+                            bg-indigo-600
+                            flex
+                            items-center
+                            justify-center
+                            shadow-lg
+                            text-2xl
+                        "
+                    >
                         🤖
                     </div>
+
                     <div>
-                        <h1 className="font-bold text-lg text-white">
+
+                        <h1 className="text-xl font-bold tracking-wide">
                             General AI
                         </h1>
-                        <p className="text-xs text-slate-400">
+
+                        <p className="text-sm text-gray-400">
                             Your AI Workspace
                         </p>
+
                     </div>
+
                 </div>
+
             </div>
 
             {mode === "archive" && (
+
                 <>
-                    {/* Back to Chat Screen */}
-                    <div className="p-4">
+
+                    <div className="p-6">
 
                         <button
                             onClick={() => router.push("/")}
                             className="
                                 cursor-pointer
                                 w-full
-                                rounded-2xl
-                                py-3
+                                h-12
+                                rounded-xl
+                                bg-indigo-600
+                                hover:bg-indigo-700
                                 font-semibold
-                                text-white
-                                bg-gradient-to-r
-                                from-blue-500
-                                via-purple-500
-                                to-pink-500
-                                hover:scale-[1.02]
                                 transition
-                                shadow-lg
+                                duration-200
                             "
                         >
                             ← Back to Chat
                         </button>
+
                     </div>
 
-                    {/* Spacer */}
-                    <div className="flex-1"></div>
+                    <div className="flex-1" />
+
                 </>
+
             )}
 
             {mode === "chat" && (
                 <>
                 {/* New Chat */}
-                <div className="p-4">
+                <div className="px-5 pt-5 space-y-3">
 
                     <button
                         onClick={createNewChat}
                         className="
                             cursor-pointer
                             w-full
-                            rounded-2xl
-                            py-3
+                            h-12
+                            rounded-xl
+                            bg-indigo-600
+                            hover:bg-indigo-700
                             font-semibold
-                            text-white
-                            bg-gradient-to-r
-                            from-blue-500
-                            via-purple-500
-                            to-pink-500
-                            hover:scale-[1.02]
-                            transition
+                            transition-all
+                            duration-200
                             shadow-lg
                         "
                     >
-                        ✨ New Chat
+                        <div className="flex items-center justify-center gap-2">
+                            <PlusIcon className="w-5 h-5"/>
+                            <span>New Chat</span>
+                        </div>
                     </button>
                     <div className="mt-3"></div>
-                    <button onClick={() => router.push("/archive")} className="cursor-pointer w-full flex items-center gap-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white px-4 py-3 transition">
-                        <ArchiveBoxIcon className="w-5 h-5 text-slate-300" />
-                        <span>Archive</span>
+                    <button
+                        onClick={() => router.push("/archive")}
+                        className="
+                            cursor-pointer
+                            w-full
+                            h-12
+                            rounded-xl
+                            border
+                            border-white/10
+                            bg-white/5
+                            hover:bg-white/10
+                            transition-all
+                            duration-200
+                        "
+                    >
+                        <div className="flex items-center justify-center gap-2">
+                            <ArchiveBoxIcon className="w-5 h-5"/>
+                            Archive
+                        </div>
                     </button>
                 </div>
 
                 {/* Search */}
-                <div className="px-4 pb-5 relative">
-                    <MagnifyingGlassIcon className="absolute left-7 top-3 w-5 h-5 text-slate-500" />
-                    <input
-                        type="text"
-                        placeholder="Search chats..."
-                        value={searchTerm}
-                        onChange={(e)=>setSearchTerm(e.target.value)}
-                        className="w-full rounded-2xl bg-slate-800 border border-slate-700 pl-10 pr-4 py-3 text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none transition" />
+                <div className="px-5 py-5">
+
+                    <div className="relative">
+
+                        <MagnifyingGlassIcon
+                            className="
+                                absolute
+                                left-4
+                                top-3.5
+                                w-5
+                                h-5
+                                text-gray-400
+                            "
+                        />
+
+                        <input
+                            type="text"
+                            placeholder="Search conversations..."
+                            value={searchTerm}
+                            onChange={(e)=>setSearchTerm(e.target.value)}
+                            className="
+                                w-full
+                                h-12
+                                rounded-xl
+                                bg-white/5
+                                border
+                                border-white/10
+                                pl-11
+                                pr-4
+                                text-sm
+                                text-white
+                                placeholder:text-gray-500
+                                focus:border-indigo-500
+                                focus:ring-2
+                                focus:ring-indigo-500/20
+                                outline-none
+                            "
+                        />
+
+                    </div>
+
                 </div>
 
                 {/* History */}
-                <div className="flex-1 px-4 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
 
                     {
                         favoriteConversations.length > 0 && (
 
-                            <div className="mb-6">
+                            <div className="mb-8">
 
-                                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500 mb-2">
-                                    <StarIcon className="w-4 h-4 text-yellow-400"/>
-                                    Favorites
+                                <div className="flex items-center justify-between mb-4">
+
+                                    <div className="flex items-center gap-2">
+
+                                        <StarIcon className="w-4 h-4 text-amber-400"/>
+
+                                        <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                            Favorites
+                                        </span>
+
+                                    </div>
+
                                 </div>
 
-                                <div className="space-y-2-noUse">
+                                <div className="space-y-2">
 
                                     {favoriteConversations.map(conv => (
 
                                         <div
                                             key={conv.id}
-                                            className={`relative group rounded-2xl px-4 py-3 transition-all duration-200 cursor-pointer
+                                            className={`relative group rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer
                                                 ${
                                                     conversationId === conv.id
-                                                    ? "bg-gradient-to-r from-indigo-500/25 to-purple-500/20 border border-indigo-500/30 shadow"
-                                                    : "hover:bg-slate-800"
+                                                    ? "bg-indigo-600 border-indigo-500 shadow-lg"
+                                                    : "bg-white/5 border-transparent hover:bg-white/10"
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between">
 
                                                 <div className="flex items-center gap-2 flex-1 truncate" onClick={() => openConversation(conv.id)}>
-                                                    <span className="truncate text-slate-100">
+                                                    <span className="truncate text-sm font-medium">
                                                         {conv.title}
                                                     </span>
                                                 </div>
@@ -656,16 +740,16 @@ export default function Sidebar({ mode = "chat" }) {
                                                             e.stopPropagation();
                                                             setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
                                                         }}
-                                                        className={`cursor-pointer px-2 ${menuOpenId === conv.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                                                        className={`cursor-pointer rounded-lg transition ${menuOpenId === conv.id ? "opacity-100 bg-white/10" : "opacity-0 group-hover:opacity-100"}`}>
                                                             <EllipsisVerticalIcon className="w-5 h-5 text-slate-400 hover:text-white"/>
                                                     </button>
                                             </div>
                                             {/* Popup Menu */}
                                             {menuOpenId === conv.id && (
                                                 <div ref={menuOpenId === conv.id ? menuRef : null} 
-                                                    className="absolute right-2 top-10 z-50 w-44 overflow-hidden rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl">
+                                                    className="absolute right-0 top-12 w-48 rounded-xl bg-white shadow-2xl overflow-hidden z-50">
 
-                                                    <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                    <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                         onClick={() => {
                                                             setMenuOpenId(null);
                                                             renameConversation(conv.id, conv.title);
@@ -674,7 +758,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                         ✏️ Rename
                                                     </button>
                                                     
-                                                    <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                    <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                         onClick={() => {
                                                             setMenuOpenId(null);
                                                             favoriteConversation(
@@ -690,7 +774,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                         }
                                                     </button>
 
-                                                    {/* <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                    {/* <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                         onClick={() => {
                                                             setMenuOpenId(null);
                                                             setSelectedConversation(conv);
@@ -700,7 +784,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                         📤 Export
                                                     </button> */}
 
-                                                    <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                    <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                         onClick={() => {
                                                             setMenuOpenId(null);
                                                             shareConversation(conv.id);
@@ -709,7 +793,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                         🔗 Share
                                                     </button>
 
-                                                    <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                    <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                         onClick={() => {
                                                             setMenuOpenId(null);
                                                             archiveConversation(conv.id);
@@ -742,12 +826,21 @@ export default function Sidebar({ mode = "chat" }) {
                         )
                     }
 
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500 mb-2">
-                        <ClockIcon className="w-4 h-4"/>
-                        Recent Chats
+                    <div className="flex items-center justify-between mb-5">
+
+                        <div className="flex items-center gap-2">
+
+                            <ClockIcon className="w-4 h-4 text-gray-400"/>
+
+                            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                Recent Chats
+                            </span>
+
+                        </div>
+
                     </div>
 
-                    <div className="space-y-2-noUse">
+                    <div className="space-y-2">
                         {
                             [
                                 {
@@ -770,21 +863,30 @@ export default function Sidebar({ mode = "chat" }) {
 
                                 section.items.length > 0 && (
 
-                                    <div key={section.title} className="mb-6">
-                                        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500 mb-2">
-                                            {section.title}
+                                    <div key={section.title} className="mb-8">
+                                        <div className="mb-3">
+                                            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+                                                {section.title}
+                                            </span>
+
                                         </div>
 
-                                        <div className="space-y-2-noUse">
+                                        <div className="space-y-2">
                                             {section.items.map(conv => (
 
-                                                <div key={conv.id} className={`relative group rounded-2xl px-4 py-3 transition-all duration-200 cursor-pointer
-                                                            ${conversationId === conv.id ? "bg-gradient-to-r from-indigo-500/25 to-purple-500/20 border border-indigo-500/30 shadow" : "hover:bg-slate-800" } `}>
-                                                    
-                                                    {/* Conversation Title */}
+                                                <div
+                                                    key={conv.id}
+                                                    className={`relative group rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer
+                                                        ${
+                                                            conversationId === conv.id
+                                                            ? "bg-indigo-600 border-indigo-500 shadow-lg"
+                                                            : "bg-white/5 border-transparent hover:bg-white/10"
+                                                        }`}
+                                                >
                                                     <div className="flex items-center justify-between">
+
                                                         <div className="flex items-center gap-2 flex-1 truncate" onClick={() => openConversation(conv.id)}>
-                                                            <span className="truncate text-slate-100">
+                                                            <span className="truncate text-sm font-medium">
                                                                 {conv.title}
                                                             </span>
                                                         </div>
@@ -802,9 +904,9 @@ export default function Sidebar({ mode = "chat" }) {
                                                     {/* Popup Menu */}
                                                     {menuOpenId === conv.id && (
                                                         <div ref={menuOpenId === conv.id ? menuRef : null} 
-                                                            className="absolute right-2 top-10 z-50 w-44 overflow-hidden rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl">
+                                                            className="absolute right-0 top-12 w-48 rounded-xl bg-white shadow-2xl overflow-hidden z-50">
 
-                                                            <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                                 onClick={() => {
                                                                     setMenuOpenId(null);
                                                                     renameConversation(conv.id, conv.title);
@@ -813,7 +915,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                                 ✏️ Rename
                                                             </button>
                                                             
-                                                            <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                                 onClick={() => {
                                                                     setMenuOpenId(null);
                                                                     favoriteConversation(
@@ -829,7 +931,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                                 }
                                                             </button>
                                                                 
-                                                            {/* <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                            {/* <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                                 onClick={() => {
                                                                     setMenuOpenId(null);
                                                                     setSelectedConversation(conv);
@@ -839,7 +941,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                                 📤 Export
                                                             </button> */}
         
-                                                            <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                                 onClick={() => {
                                                                     setMenuOpenId(null);
                                                                     shareConversation(conv.id);
@@ -848,7 +950,7 @@ export default function Sidebar({ mode = "chat" }) {
                                                                 🔗 Share
                                                             </button>
 
-                                                            <button className="cursor-pointer w-full px-4 py-2 text-left text-slate-200 hover:bg-slate-700 transition"
+                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
                                                                 onClick={() => {
                                                                     setMenuOpenId(null);
                                                                     archiveConversation(conv.id);
@@ -885,6 +987,27 @@ export default function Sidebar({ mode = "chat" }) {
                             }
 
                     </div>
+                    
+                    {/* Empty State */}
+                    {conversations.length === 0 && (
+
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                <PlusIcon className="w-8 h-8 text-gray-500" />
+                            </div>
+
+                            <h3 className="text-white font-semibold">
+                                No conversations yet
+                            </h3>
+
+                            <p className="text-gray-400 text-sm mt-2">
+                                Click "New Chat" to start your first conversation.
+                            </p>
+
+                        </div>
+
+                    )}
 
                 </div>
                             
@@ -893,114 +1016,227 @@ export default function Sidebar({ mode = "chat" }) {
             
 
             {/* User */}
-            <div className="border-t border-slate-800 p-4">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-r rom-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center font-bold">
-                        {user?.email?.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 truncate">
-                        <div className="font-medium truncate text-white">
-                            {user?.email}
+            
+            <div className="border-t border-white/10 p-5">
+
+                <div
+                    className="
+                        bg-white/5
+                        rounded-2xl
+                        p-4
+                        border
+                        border-white/10
+                    "
+                >
+
+                    <div className="flex items-center gap-3">
+
+                        <div
+                            className="
+                                w-12
+                                h-12
+                                rounded-full
+                                bg-indigo-600
+                                flex
+                                items-center
+                                justify-center
+                                text-lg
+                                font-bold
+                            "
+                        >
+                            {user?.email?.charAt(0).toUpperCase()}
                         </div>
+
+                        <div className="flex-1 min-w-0">
+
+                            {/* <div className="font-semibold truncate">
+                                {user?.user_metadata?.full_name || "User"}
+                            </div> */}
+
+                            <div className="text-sm text-gray-400 truncate">
+                                {user?.email}
+                            </div>
+
+                        </div>
+
                     </div>
+
+                    <button
+                        onClick={logout}
+                        className="
+                            cursor-pointer
+                            mt-4
+                            w-full
+                            h-11
+                            rounded-xl
+                            border
+                            border-red-500/40
+                            text-red-300
+                            hover:bg-red-600
+                            hover:text-white
+                            transition
+                            duration-200
+                        "
+                    >
+                        Logout
+                    </button>
+
                 </div>
 
-                <button onClick={logout}
-                    className="cursor-pointer w-full rounded-2xl py-3 bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white transition">
-                    🚪 Logout
-                </button>
             </div>
 
             {/* Delete Conversation Modal */}
             {deleteModalOpen && (
 
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                            Delete Conversation
-                        </h2>
-                        <p className="text-gray-600 mb-6">
-                            Are you sure you want to delete this conversation?
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => {
-                                    setDeleteModalOpen(false);
-                                    setConversationToDelete(null);
-                                }}
-                                className="cursor-pointer px-4 py-2 rounded-xl border border-gray-300 bg-slate-400 hover:bg-slate-500"
-                            >
-                                Cancel
-                            </button>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
 
-                            <button
-                                onClick={deleteConversation}
-                                className="cursor-pointer px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-900"
-                            >
-                                Delete
-                            </button>
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
 
-                        </div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        Delete Conversation
+                    </h2>
+
+                    <p className="mt-3 text-gray-500 leading-7">
+                        This conversation will be permanently deleted.
+                        This action cannot be undone.
+                    </p>
+
+                    <div className="flex justify-end gap-3 mt-8">
+
+                        <button
+                            onClick={()=>{
+                                setDeleteModalOpen(false);
+                                setConversationToDelete(null);
+                            }}
+                            className="cursor-pointer rounded-xl border px-5 py-3 hover:bg-slate-100 text-black"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            onClick={deleteConversation}
+                            className="
+                                cursor-pointer
+                                px-5
+                                py-3
+                                rounded-xl
+                                bg-red-600
+                                text-white
+                                hover:bg-red-700
+                            "
+                        >
+                            Delete
+                        </button>
 
                     </div>
 
                 </div>
 
+            </div>
+
             )}
 
             {/* Export Modal */}
-            {
-                showExportModal && (
+            {showExportModal && (
 
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
 
-                        <div className="bg-white rounded-2xl shadow-xl p-6 w-[400px]">
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
 
-                            <h2 className="text-xl font-semibold mb-5 text-gray-800">
-                                Export Conversation
-                            </h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        Export Conversation
+                    </h2>
 
-                            <div className="space-y-3 text-gray-600">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="radio" name="exportType" value="pdf"
-                                        checked={exportType === "pdf"} onChange={(e) => setExportType(e.target.value)} />
-                                    📄 PDF
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="radio" name="exportType" value="txt" checked={exportType === "txt"}
-                                        onChange={(e) => setExportType(e.target.value)} />
-                                    📝 Text (.txt)
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="radio" name="exportType" value="md" checked={exportType === "md"}
-                                        onChange={(e) => setExportType(e.target.value)} />
-                                    📑 Markdown (.md)
-                                </label>
-                            </div>
+                    <p className="text-gray-500 mt-2">
+                        Choose your preferred export format.
+                    </p>
 
-                            <div className="flex justify-end gap-3 mt-8">
-                                <button onClick={() => setShowExportModal(false) } className="cursor-pointer px-4 py-2 rounded-xl border border-gray-300 bg-gray-500 hover:bg-gray-900">
-                                    Cancel
-                                </button>
-                                <button className="cursor-pointer px-5 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
-                                    onClick={() => {
-                                        exportConversation(
-                                            selectedConversation.id,
-                                            exportType
-                                        );
-                                        setShowExportModal(false);
-                                    }}                            
-                                >
-                                    Export
-                                </button>
+                    <div className="space-y-4 mt-8">
 
-                            </div>
+                        <label className="flex items-center gap-3 rounded-xl border p-4 cursor-pointer hover:bg-gray-50">
 
-                        </div>
+                            <input
+                                type="radio"
+                                value="pdf"
+                                checked={exportType==="pdf"}
+                                onChange={(e)=>setExportType(e.target.value)}
+                            />
+
+                            <span className="font-medium">
+                                PDF Document
+                            </span>
+
+                        </label>
+
+                        <label className="flex items-center gap-3 rounded-xl border p-4 cursor-pointer hover:bg-gray-50">
+
+                            <input
+                                type="radio"
+                                value="txt"
+                                checked={exportType==="txt"}
+                                onChange={(e)=>setExportType(e.target.value)}
+                            />
+
+                            <span className="font-medium">
+                                Text File (.txt)
+                            </span>
+
+                        </label>
+
+                        <label className="flex items-center gap-3 rounded-xl border p-4 cursor-pointer hover:bg-gray-50">
+
+                            <input
+                                type="radio"
+                                value="md"
+                                checked={exportType==="md"}
+                                onChange={(e)=>setExportType(e.target.value)}
+                            />
+
+                            <span className="font-medium">
+                                Markdown (.md)
+                            </span>
+
+                        </label>
 
                     </div>
 
-                )
-            }
+                    <div className="flex justify-end gap-3 mt-8">
+
+                        <button
+                            onClick={()=>setShowExportModal(false)}
+                            className="cursor-pointer rounded-xl border px-5 py-3 hover:bg-slate-100 text-black"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            onClick={()=>{
+                                exportConversation(
+                                    selectedConversation.id,
+                                    exportType
+                                );
+                                setShowExportModal(false);
+                            }}
+                            className="
+                                cursor-pointer
+                                px-5
+                                py-3
+                                rounded-xl
+                                bg-[#0B1324]
+                                text-white
+                                hover:bg-black
+                            "
+                        >
+                            Export
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            )}
 
         </div>
     );

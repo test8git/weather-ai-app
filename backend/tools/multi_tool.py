@@ -286,7 +286,7 @@ def wikipedia_search(query: str) -> str:
 
 
 @tool(description="Search programming documentation, StackOverflow, GitHub, official docs.")
-def search_programming(query: str):
+def programming_search(query: str):
     q = query.lower()
     search_query = ""
 

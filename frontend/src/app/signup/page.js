@@ -1,11 +1,12 @@
 "use client";
 
+import AuthLayout from "@/components/AuthLayout";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLoading } from "@/context/LoadingContext"
-import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import { EnvelopeIcon, LockClosedIcon, UserIcon } from "@heroicons/react/24/outline";
 
 export default function SignupPage() {
 
@@ -14,6 +15,21 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const router = useRouter();
+
+  const validatePassword = (password) => {
+        const passwordRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()_\-+=\[\]{}|\\:;"'<>,./~`])[A-Za-z\d@$!%*?&^#()_\-+=\[\]{}|\\:;"'<>,./~`]{8,}$/;
+
+        return passwordRegex.test(password);
+    };
+
+  const passwordChecks = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /\d/.test(password),
+        special: /[^A-Za-z0-9]/.test(password),
+    };  
 
   const signup = async () => {
 
@@ -57,14 +73,11 @@ export default function SignupPage() {
 
     }
 
-    // Length
-
-    if(password.length < 8){
-
-        toast.error("Password must be at least 8 characters.");
-
+    if (!validatePassword(password)) {
+        toast.error(
+            "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character."
+        );
         return;
-
     }
 
     try{
@@ -104,220 +117,164 @@ export default function SignupPage() {
 
   return (
 
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-700 via-purple-600 to-pink-500">
+    <AuthLayout
+            icon="👤"
+            title="Create Account"
+            subtitle="Create your AI workspace account and start chatting."
+        >
+            {/* Email */}
 
-    {/* Background */}
+            <div className="relative">
 
-    <div className="absolute w-96 h-96 bg-pink-400 rounded-full blur-[120px] opacity-25 top-[-100px] left-[-100px]" />
+                <EnvelopeIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
 
-    <div className="absolute w-96 h-96 bg-indigo-400 rounded-full blur-[120px] opacity-25 bottom-[-100px] right-[-100px]" />
+                <input
+                    type="email"
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="
+                        w-full
+                        h-14
+                        border
+                        rounded-xl
+                        pl-12
+                        pr-4
+                        text-base
+                        outline-none
+                        focus:border-indigo-500
+                    "
+                />
 
-    {/* Card */}
-
-    <div
-        className="
-            relative
-            w-full
-            max-w-md
-            rounded-3xl
-            border
-            border-white/20
-            bg-white/15
-            backdrop-blur-xl
-            shadow-2xl
-            p-10
-        "
-    >
-
-        {/* Logo */}
-
-        <div className="text-center">
-
-            <div className="text-6xl mb-2">
-                🤖
             </div>
 
-            <h1 className="text-4xl font-bold text-white">
-                Create Account
-            </h1>
+            {/* Password */}
 
-            <p className="text-white/80 mt-2 leading-7">
-                Create your AI Assistant account and start chatting.
+            <div className="relative mt-5">
+
+                <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
+
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="
+                        w-full
+                        h-14
+                        border
+                        rounded-xl
+                        pl-12
+                        pr-4
+                        text-base
+                        outline-none
+                        focus:border-indigo-500
+                    "
+                />
+
+            </div>
+
+            {/* Confirm Password */}
+
+            <div className="relative mt-5">
+
+                <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
+
+                <input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="
+                        w-full
+                        h-14
+                        border
+                        rounded-xl
+                        pl-12
+                        pr-4
+                        text-base
+                        outline-none
+                        focus:border-indigo-500
+                    "
+                />
+
+            </div>
+
+            {/* Password Hint */}
+
+            <p className="mt-4 text-sm text-gray-500 leading-6">
+                Password must contain at least
+                <span className="font-semibold text-gray-700">
+                    {" "}8 characters
+                </span>
+                , one uppercase letter, one lowercase letter,
+                one number and one special character.
             </p>
 
-        </div>
+            {/* <div className="mt-4 text-sm space-y-1">
+                <p className={passwordChecks.length ? "text-green-600" : "text-gray-500"}>
+                    ✓ At least 8 characters
+                </p>
 
-        {/* Email */}
+                <p className={passwordChecks.uppercase ? "text-green-600" : "text-gray-500"}>
+                    ✓ One uppercase letter
+                </p>
 
-        <div className="mt-8 relative">
+                <p className={passwordChecks.lowercase ? "text-green-600" : "text-gray-500"}>
+                    ✓ One lowercase letter
+                </p>
 
-            <span className="absolute left-4 top-4 text-white">
-                <EnvelopeIcon className="w-5 h-5" />
-            </span>
+                <p className={passwordChecks.number ? "text-green-600" : "text-gray-500"}>
+                    ✓ One number
+                </p>
 
-            <input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e)=>setEmail(e.target.value)}
-                className="
-                    w-full
-                    rounded-xl
-                    bg-white/10
-                    border
-                    border-white/20
-                    text-white
-                    placeholder-white/60
-                    pl-12
-                    pr-4
-                    py-4
-                    outline-none
-                    focus:border-blue-300
-                "
-            />
+                <p className={passwordChecks.special ? "text-green-600" : "text-gray-500"}>
+                    ✓ One special character
+                </p>
+            </div> */}
 
-        </div>
-
-        {/* Password */}
-
-        <div className="mt-4 relative">
-
-            <span className="absolute left-4 top-4 text-white">
-                <LockClosedIcon className="w-5 h-5" />
-            </span>
-
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e)=>setPassword(e.target.value)}
-                className="
-                    w-full
-                    rounded-xl
-                    bg-white/10
-                    border
-                    border-white/20
-                    text-white
-                    placeholder-white/60
-                    pl-12
-                    pr-12
-                    py-4
-                    outline-none
-                    focus:border-blue-300
-                "
-            />
-
-        </div>
-
-        {/* Confirm Password */}
-
-        <div className="mt-4 relative">
-
-            <span className="absolute left-4 top-4 text-white">
-                <LockClosedIcon className="w-5 h-5" />
-            </span>
-
-            <input
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e)=>setConfirmPassword(e.target.value)}
-                className="
-                    w-full
-                    rounded-xl
-                    bg-white/10
-                    border
-                    border-white/20
-                    text-white
-                    placeholder-white/60
-                    pl-12
-                    pr-12
-                    py-4
-                    outline-none
-                    focus:border-blue-300
-                "
-            />
-
-        </div>
-
-        {/* Password Hint */}
-
-        {/* <p className="mt-3 text-sm text-white/70 leading-6">
-
-            Password should contain at least
-            <span className="font-semibold text-white">
-                {" "}8 characters
-            </span>
-            ,
-            one uppercase letter,
-            one lowercase letter,
-            one number,
-            and one special character.
-
-        </p> */}
-
-        {/* Signup */}
-
-        <button
-            onClick={signup}
-            className="
-                cursor-pointer
-                mt-6
-                w-full
-                rounded-xl
-                py-4
-                text-lg
-                font-semibold
-                text-white
-                bg-gradient-to-r
-                from-blue-500
-                via-purple-500
-                to-pink-500
-                hover:scale-[1.02]
-                transition
-                duration-200
-                shadow-xl
-            "
-        >
-            Create Account →
-        </button>
-
-        {/* Divider */}
-
-        <div className="flex items-center my-8">
-
-            <div className="flex-1 h-px bg-white/20" />
-
-            <div className="flex-1 h-px bg-white/20" />
-
-        </div>
-
-        {/* Login */}
-
-        <div className="text-center">
-
-            <span className="text-white/70">
-                Already have an account?
-            </span>
+            {/* Button */}
 
             <button
-                onClick={() => router.push("/login")}
+                onClick={signup}
                 className="
                     cursor-pointer
-                    ml-2
+                    w-full
+                    mt-6
+                    bg-[#0B1324]
                     text-white
+                    rounded-lg
+                    py-3
                     font-semibold
-                    hover:text-blue-200
+                    hover:bg-black
                     transition
                 "
             >
-                Login
+                Create Account
             </button>
 
-        </div>
+            {/* Login */}
 
-    </div>
+            <div className="text-center mt-8">
 
-</div>
+                <span className="text-gray-500">
+                    Already have an account?
+                </span>
+
+                <button
+                    onClick={() => router.push("/login")}
+                    className="
+                        cursor-pointer
+                        ml-2
+                        font-semibold
+                        text-black
+                    "
+                >
+                    Login
+                </button>
+
+            </div>
+
+        </AuthLayout>
   );
 }

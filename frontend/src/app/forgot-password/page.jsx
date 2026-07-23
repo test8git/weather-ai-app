@@ -1,5 +1,6 @@
 "use client";
 
+import AuthLayout from "@/components/AuthLayout";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -49,75 +50,32 @@ export default function ForgotPasswordPage() {
 
   return (
 
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-700 via-purple-600 to-pink-500">
-
-    {/* Background */}
-
-    <div className="absolute w-96 h-96 bg-pink-400 rounded-full blur-[120px] opacity-25 top-[-100px] left-[-100px]" />
-
-    <div className="absolute w-96 h-96 bg-indigo-400 rounded-full blur-[120px] opacity-25 bottom-[-100px] right-[-100px]" />
-
-    {/* Card */}
-
-    <div
-        className="
-            relative
-            w-full
-            max-w-md
-            rounded-3xl
-            border
-            border-white/20
-            bg-white/15
-            backdrop-blur-xl
-            shadow-2xl
-            p-10
-        "
-    >
-
-        {/* Logo */}
-
-        <div className="text-center">
-
-            <div className="text-6xl mb-2">
-                🔑
-            </div>
-
-            <h1 className="text-4xl font-bold text-white">
-                Forgot Password
-            </h1>
-
-            <p className="text-white/80 mt-2 leading-7">
-                Enter your registered email address and we'll send you a password reset link.
-            </p>
-
-        </div>
+    <AuthLayout icon="🔑" title="Forgot Password" 
+                subtitle="Enter your registered email address and we'll send you a password reset link.">
 
         {/* Email */}
 
-        <div className="mt-8 relative">
+        <div className="relative">
 
-            <span className="absolute left-4 top-4 text-white">
-                <EnvelopeIcon className="w-5 h-5" />
-            </span>
+            <EnvelopeIcon
+                className="w-5 h-5 absolute left-4 top-4 text-gray-400"
+            />
 
             <input
                 type="email"
-                placeholder="Email Address"
                 value={email}
-                onChange={(e)=>setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email Address"
                 className="
                     w-full
-                    rounded-xl
-                    bg-white/10
+                    h-14
                     border
-                    border-white/20
-                    text-white
-                    placeholder-white/60
+                    rounded-xl
                     pl-12
                     pr-4
-                    py-4
+                    text-base
                     outline-none
-                    focus:border-blue-300
+                    focus:border-indigo-500
                 "
             />
 
@@ -129,56 +87,37 @@ export default function ForgotPasswordPage() {
             onClick={sendResetEmail}
             className="
                 cursor-pointer
-                mt-6
                 w-full
-                rounded-xl
-                py-4
-                text-lg
-                font-semibold
+                mt-6
+                bg-[#0B1324]
                 text-white
-                bg-gradient-to-r
-                from-blue-500
-                via-purple-500
-                to-pink-500
-                hover:scale-[1.02]
+                rounded-lg
+                py-3
+                font-semibold
+                hover:bg-black
                 transition
-                duration-200
-                shadow-xl
             "
         >
-            Send Reset Link →
+            Send Reset Link
         </button>
-
-        {/* Divider */}
-
-        <div className="flex items-center my-8">
-
-            <div className="flex-1 h-px bg-white/20" />
-
-            <div className="flex-1 h-px bg-white/20" />
-
-        </div>
 
         {/* Back */}
 
-        <div className="text-center">
+        <div className="text-center mt-8">
 
-            <Link
-                href="/login"
+            <button
+                onClick={() => router.push("/login")}
                 className="
-                    text-white
-                    hover:text-blue-200
-                    transition
+                    cursor-pointer
+                    text-indigo-600
+                    hover:underline
                     font-medium
                 "
             >
                 ← Back to Login
-            </Link>
+            </button>
 
         </div>
-
-    </div>
-
-</div>
+    </AuthLayout>            
   );
 }

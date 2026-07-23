@@ -1,136 +1,181 @@
 export default function WelcomeScreen({ askSuggestionToAI }) {
 
     return (
-        <div className="flex-1 overflow-y-auto bg-slate-50">
-            <div className="max-w-5xl mx-auto px-8 py-12">
+        <div className="flex-1 overflow-y-auto bg-[#F8FAFC]">
+            <div className="max-w-6xl mx-auto px-8 py-12">
+
+                {/* Greeting */}
                 <div className="text-center">
-                    {/* Logo */}
 
-                    <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-5xl shadow-xl">
-
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-indigo-100 flex items-center justify-center shadow">
                         🤖
-
                     </div>
 
-                    <h1 className="mt-8 text-5xl font-bold text-slate-800">
-                        General AI Assistant
+                    <h1 className="mt-8 text-5xl font-bold text-gray-900">
+                        Welcome Back
                     </h1>
 
-                    <p className="mt-4 text-xl text-slate-500">
-                        Your intelligent AI workspace
+                    <p className="mt-4 text-xl text-gray-500">
+                        What would you like to do today?
                     </p>
 
-                    {/* Features */}
+                </div>
 
-                    <div className="grid grid-cols-2 gap-5 mt-12">
+                {/* AI Capability Cards */}
 
-                        <div className="bg-white rounded-2xl shadow p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-14">
 
-                            <div className="text-3xl mb-2">
-                                💬
-                            </div>
+                    <div className="rounded-2xl bg-white border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-500 transition cursor-pointer">
 
-                            <h3 className="font-semibold text-lg">
-                                Ask Anything
-                            </h3>
-
-                            <p className="text-slate-500 mt-2">
-                                General knowledge, reasoning, research and brainstorming.
-                            </p>
-
+                        <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-2xl">
+                            💬
                         </div>
 
-                        <div className="bg-white rounded-2xl shadow p-6">
-
-                            <div className="text-3xl mb-2">
-                                📄
-                            </div>
-
-                            <h3 className="font-semibold text-lg">
-                                Analyze Documents
-                            </h3>
-
-                            <p className="text-slate-500 mt-2">
-                                PDF, Word, Excel, PowerPoint and Email support.
-                            </p>
-
-                        </div>
-
-                        <div className="bg-white rounded-2xl shadow p-6">
-
-                            <div className="text-3xl mb-2">
-                                💻
-                            </div>
-
-                            <h3 className="font-semibold text-lg">
-                                Generate Code
-                            </h3>
-
-                            <p className="text-slate-500 mt-2">
-                                PHP, Python, C#, SQL, JavaScript and more.
-                            </p>
-
-                        </div>
-
-                        <div className="bg-white rounded-2xl shadow p-6">
-
-                            <div className="text-3xl mb-2">
-                                🌦
-                            </div>
-
-                            <h3 className="font-semibold text-lg">
-                                Weather AI
-                            </h3>
-
-                            <p className="text-slate-500 mt-2">
-                                Forecasts, charts and AI recommendations.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                    {/* Suggestions */}
-
-                    <div className="mt-14">
-
-                        <h3 className="text-lg font-semibold text-slate-700 mb-5">
-                            Try one of these
+                        <h3 className="mt-5 text-lg font-semibold">
+                            Ask Anything
                         </h3>
 
-                        <div className="grid grid-cols-2 gap-4">
-
-                            <button
-                                className="rounded-xl bg-white shadow hover:shadow-lg transition p-4 text-left hover:border-blue-400 border"
-                                onClick={() => askSuggestionToAI("Write a Python REST API using FastAPI")}
-                            >
-                                🚀 Write a Python REST API using FastAPI
-                            </button>
-
-                            <button
-                                className="rounded-xl bg-white shadow hover:shadow-lg transition p-4 text-left hover:border-blue-400 border"
-                                onClick={() => askSuggestionToAI("Explain Quantum Physics simply")}
-                            >
-                                ⚛ Explain Quantum Physics simply
-                            </button>
-
-                            <button
-                                className="rounded-xl bg-white shadow hover:shadow-lg transition p-4 text-left hover:border-blue-400 border"
-                                onClick={() => askSuggestionToAI("Apple current stock")}
-                            >
-                                📈 Apple current stock
-                            </button>
-
-                        </div>
+                        <p className="mt-2 text-sm text-gray-500 leading-6">
+                            Research, brainstorming, writing, reasoning and everyday questions.
+                        </p>
 
                     </div>
 
-                    <p className="mt-12 text-slate-400 text-sm">
-                        Powered by Gemini • OpenAI • Claude • Groq • OpenRouter
-                    </p>
-                </div>
-            </div>
+                    <div className="rounded-2xl bg-white border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-500 transition cursor-pointer">
 
+                        <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl">
+                            📄
+                        </div>
+
+                        <h3 className="mt-5 text-lg font-semibold">
+                            Analyze Documents
+                        </h3>
+
+                        <p className="mt-2 text-sm text-gray-500 leading-6">
+                            PDF, Word, Excel, PowerPoint and Email support.
+                        </p>
+
+                    </div>
+
+                    <div className="rounded-2xl bg-white border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-500 transition cursor-pointer">
+
+                        <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center text-2xl">
+                            💻
+                        </div>
+
+                        <h3 className="mt-5 text-lg font-semibold">
+                            Generate Code
+                        </h3>
+
+                        <p className="mt-2 text-sm text-gray-500 leading-6">
+                            Python, JavaScript, SQL, C#, PHP, Java and more.
+                        </p>
+
+                    </div>
+
+                    <div className="rounded-2xl bg-white border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-500 transition cursor-pointer">
+
+                        <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center text-2xl">
+                            📊
+                        </div>
+
+                        <h3 className="mt-5 text-lg font-semibold">
+                            Data Analysis
+                        </h3>
+
+                        <p className="mt-2 text-sm text-gray-500 leading-6">
+                            Charts, CSV files, statistics, reports and dashboards.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                {/* Suggested Prompts */}
+
+                <div className="mt-16">
+
+                    <div className="flex items-center justify-between">
+
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            Suggested Prompts
+                        </h2>
+
+                        <span className="text-sm text-gray-500">
+                            Click to start instantly
+                        </span>
+
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-8">
+
+                        <button className="rounded-2xl border border-gray-200 bg-white p-5 text-left hover:border-indigo-500 hover:shadow-lg transition"
+                        onClick={() => askSuggestionToAI("Write a Python REST API using FastAPI")}>
+
+                            <div className="font-semibold text-gray-900">
+                                🚀 Build a REST API using FastAPI
+                            </div>
+
+                            <p className="mt-2 text-sm text-gray-500">
+                                Generate complete production-ready code.
+                            </p>
+
+                        </button>
+
+                        <button className="rounded-2xl border border-gray-200 bg-white p-5 text-left hover:border-indigo-500 hover:shadow-lg transition"
+                        onClick={() => askSuggestionToAI("Write a business communication professional email with polished wording.")}>
+
+                            <div className="font-semibold text-gray-900">
+                                ✍ Write a professional email
+                            </div>
+
+                            <p className="mt-2 text-sm text-gray-500">
+                                Business communication with polished wording.
+                            </p>
+
+                        </button>
+
+                        <button className="rounded-2xl border border-gray-200 bg-white p-5 text-left hover:border-indigo-500 hover:shadow-lg transition"
+                        onClick={() => askSuggestionToAI("Explain Quantum Physics simply")}>
+
+                            <div className="font-semibold text-gray-900">
+                                ⚛ Explain Quantum Physics simply
+                            </div>
+
+                            <p className="mt-2 text-sm text-gray-500">
+                                Science knowledge with AI insights.
+                            </p>
+
+                        </button>
+
+                        <button className="rounded-2xl border border-gray-200 bg-white p-5 text-left hover:border-indigo-500 hover:shadow-lg transition"
+                        onClick={() => askSuggestionToAI("Explain today's stock market")}>
+
+                            <div className="font-semibold text-gray-900">
+                                📈 Explain today's stock market
+                            </div>
+
+                            <p className="mt-2 text-sm text-gray-500">
+                                Market trends with AI insights.
+                            </p>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                {/* Footer */}
+
+                <div className="mt-20 text-center">
+
+                    <p className="text-sm text-gray-400">
+                        Powered by OpenAI • Gemini • Claude • Groq • OpenRouter
+                    </p>
+
+                </div>
+
+            </div>
         </div>
 
     );

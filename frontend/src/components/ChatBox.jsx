@@ -65,6 +65,7 @@ export default function ChatBox() {
   const [feedbackComment, setFeedbackComment] = useState("");
 
   const session_id = user?.id || "";
+  const user_email = user?.email || "";
 
   useEffect(() => {
 
@@ -277,7 +278,9 @@ export default function ChatBox() {
 
         formData.append("question", actualQuestion);
         formData.append("session_id", session_id);
+        formData.append("user_email", user_email);
         formData.append("selected_model", selectedModel);
+        formData.append("conversation_id", currentConversationId);
 
         if (selectedFile) {
           formData.append("file", selectedFile);
@@ -1112,23 +1115,27 @@ const switchVersion = (assistantMessage, direction) =>
 
   return (
     <>
-      {/* <div className="font-[Inter] max-w-5xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col h-[90vh]"> */}
-      <div className="font-[Inter] h-full bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col">
+      <div className="font-[Inter] h-full flex flex-col overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200 shadow-2xl">
 
-        <div className="border-b px-6 py-4 bg-white flex justify-between items-center">
+        {/* HEADER */}
+        <div className="px-8 py-5 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
+          <div className="flex items-center gap-4">
 
-          <div>
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-500 text-white flex items-center justify-center text-xl shadow-lg">
+                  🤖
+              </div>
 
-              <h2 className="text-xl font-bold">
-                  General AI Assistant
-              </h2>
+              <div>
+                  <h2 className="text-xl font-semibold text-slate-900">
+                      General AI Assistant
+                  </h2>
 
-              <div className="text-sm text-gray-500">
-                  Ask anything
+                  <p className="text-sm text-slate-500">
+                      Ask anything • Generate ideas • Write code • Analyze files
+                  </p>
               </div>
 
           </div>
-
         </div>
 
         {/* Content */}
@@ -1142,18 +1149,17 @@ const switchVersion = (assistantMessage, direction) =>
               <>
               {messages && (
 
-                <div className="flex-1 overflow-y-auto px-6 py-6 bg-[#f9f7f3]">
+                <div className="flex-1 overflow-y-auto px-8 py-8 space-y-8 bg-gradient-to-b from-slate-50 via-white to-slate-100">
                     
                     {messages.map((msg, index) => (                
                         
                         <motion.div key={index} initial={{ opacity: 0, y: 10}} animate={{ opacity: 1, y: 0 }} transition={{duration: 0.2}}>
-                          <div key={index} className={msg.role === "user"? "text-right": "text-left"}>
+                          <div key={index} className={msg.role === "user"? "flex justify-end": "text-left"}>
                             <div
                                 className={
                                 msg.role === "user"
-                                    ? "group inline-block mt-3 mb-1 px-5 py-1  max-w-[80%] text-[15px] leading-7"
-                                    : "group bg-white/90 backdrop-blur-md border border-gray-100 border-gray-200 text-black inline-block px-5 py-4 rounded-3xl w-full shadow-sm text-[15px] leading-7"
-                                }
+                                    ? "group inline-flex items-center justify-start max-w-[70%] px-5 py-3 rounded-2xl bg-gradient-to-r from-gray-100 to-gray-100 shadow-lg" 
+                                    : "group w-full rounded-[28px] bg-white border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 px-7 py-6"                                 }
                             >
                               {
                                 editingIndex === index ?
@@ -1187,7 +1193,7 @@ const switchVersion = (assistantMessage, direction) =>
                                 )
                                 :
                                 (                            
-                                  <div className="text-white prose prose-lg max-w-none">
+                                  <div className="prose prose-lg max-w-none">
 
                                     <>
                                     
@@ -1233,7 +1239,7 @@ const switchVersion = (assistantMessage, direction) =>
                                                         p: ({ children }) => (
                                                             <div className={
                                                                   msg.role === "user"
-                                                                      ? "leading-8 text-[15px] text-gray-800 mb-1 break-words rounded-3xl shadow-sm px-3 py-1"
+                                                                      ? "leading-7 text-[15px] break-words m-0"
                                                                       : "leading-8 text-[15px] text-gray-800 mb-1 break-words"
                                                                   }>
                                                               {children}
@@ -1359,11 +1365,6 @@ const switchVersion = (assistantMessage, direction) =>
 
                                                         },
 
-                                                        // pre: ({ children }) => (
-                                                        //     <pre className="bg-[#0d1117] text-gray-100 p-5 rounded-2xl overflow-x-auto text-sm leading-7 my-5 shadow-lg">
-                                                        //         {children}
-                                                        //     </pre>
-                                                        // ),
                                                         pre: ({ children }) => (
                                                           <pre className="whitespace-pre-wrap break-words overflow-x-auto bg-slate-900 p-4 rounded-xl">
                                                             {children}
@@ -1400,10 +1401,10 @@ const switchVersion = (assistantMessage, direction) =>
                                     </>
 
                                       {msg.role === "user" && (
-                                        <div className="flex justify-end mt-0">
+                                        <div className="flex justify-end gap-2 mt-3 opacity-0 group-hover:opacity-100 transition">
                                             <button
                                               title="Copy"
-                                              className="cursor-pointer opacity-0 group-hover:opacity-100 group-hover:opacity-100 text-gray-400 hover:text-gray-700 text-sm"
+                                              className="h-8 w-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
                                               onClick={() => {copyMessage(msg.content);}}
                                           >📋</button>
 
@@ -1412,9 +1413,9 @@ const switchVersion = (assistantMessage, direction) =>
                                                     setEditingIndex(index);
                                                     setEditingText(msg.content);
                                                 }}
-                                                className="cursor-pointer opacity-0 group-hover:opacity-100 group-hover:opacity-100 text-gray-400 hover:text-gray-700 ml-2"
+                                                className="h-8 w-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
                                             >
-                                                ✏
+                                                ✏️
                                             </button>
                                           </div>
                                       )}
@@ -1538,7 +1539,7 @@ const switchVersion = (assistantMessage, direction) =>
           </div>
         )}
         
-        <div className="border-t bg-white p-4">
+        <div className="border-t border-slate-200 bg-white/90 backdrop-blur-xl px-6 py-5 shadow-inner">
 
     {/* FILE PREVIEW */}
     {selectedFile && (

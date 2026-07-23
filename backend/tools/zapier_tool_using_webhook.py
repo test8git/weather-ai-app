@@ -15,7 +15,8 @@ def send_to_zapier(
     question: str,
     answer: str,
     model: str,
-    session_id:str
+    session_id:str,
+    user_email:str
 ):
     """
     Send chat details to Zapier.
@@ -32,6 +33,7 @@ def send_to_zapier(
         "answer": answer,
         "model": model,
         "user": session_id,
+        "user_email":user_email,
         "created_at": current_datetime
     }
 
