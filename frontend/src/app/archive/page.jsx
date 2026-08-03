@@ -15,6 +15,7 @@ export default function ArchivePage()
     const [error, setError] = useState("");
     const [conversations, setConversations] = useState([]);
     const { setGlobalLoading } = useLoading();
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [conversationToDelete, setConversationToDelete] = useState(null);
@@ -138,9 +139,9 @@ export default function ArchivePage()
 
     return (
         <ProtectedRoute>
-              <div className="flex h-screen">
-                <Sidebar mode="archive" />
-                <div className="flex-1 bg-slate-100 p-4">
+              <div className="flex h-screen overflow-hidden">
+                <Sidebar mode="archive" collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+                <div className="flex-1 bg-slate-100 p-4 min-w-0">
                     {error && (
                     <div className="mb-3">
                         <p className="text-red-500">

@@ -1115,623 +1115,624 @@ const switchVersion = (assistantMessage, direction) =>
 
   return (
     <>
-      <div className="font-[Inter] h-full flex flex-col overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200 shadow-2xl">
+      <div className="h-full p-4">
+        <div className="font-[Inter] h-full flex flex-col overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-50 via-white to-slate-100 border border-slate-200 shadow-2xl">
 
-        {/* HEADER */}
-        <div className="px-8 py-5 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
+          {/* HEADER */}
+          <div className="px-8 py-5 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
+            <div className="flex items-center gap-4">
 
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-500 text-white flex items-center justify-center text-xl shadow-lg">
-                  🤖
-              </div>
-
-              <div>
-                  <h2 className="text-xl font-semibold text-slate-900">
-                      General AI Assistant
-                  </h2>
-
-                  <p className="text-sm text-slate-500">
-                      Ask anything • Generate ideas • Write code • Analyze files
-                  </p>
-              </div>
-
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          {messages.length === 0 ? (
-                isLoadingLocal == false && (
-                    /* Welcome Screen */
-                    <WelcomeScreen askSuggestionToAI={handleSuggestion} />
-                )
-            ) : (
-              <>
-              {messages && (
-
-                <div className="flex-1 overflow-y-auto px-8 py-8 space-y-8 bg-gradient-to-b from-slate-50 via-white to-slate-100">
-                    
-                    {messages.map((msg, index) => (                
-                        
-                        <motion.div key={index} initial={{ opacity: 0, y: 10}} animate={{ opacity: 1, y: 0 }} transition={{duration: 0.2}}>
-                          <div key={index} className={msg.role === "user"? "flex justify-end": "text-left"}>
-                            <div
-                                className={
-                                msg.role === "user"
-                                    ? "group inline-flex items-center justify-start max-w-[70%] px-5 py-3 rounded-2xl bg-gradient-to-r from-gray-100 to-gray-100 shadow-lg" 
-                                    : "group w-full rounded-[28px] bg-white border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 px-7 py-6"                                 }
-                            >
-                              {
-                                editingIndex === index ?
-                                (
-                                  <div>
-                                      <textarea
-                                          value={editingText}
-                                          onChange={(e)=>setEditingText(e.target.value)}
-                                          className="w-full rounded-2xl bg-blue-200 text-black px-5 py-3 border-2 border-blue-400 resize-none outline-none" />
-
-                                      <div className="flex justify-end gap-2 mt-3">
-
-                                          <button
-                                              onClick={() => setEditingIndex(null)}
-                                              className="cursor-pointer px-4 py-2 rounded-lg hover:bg-slate-100"
-                                          >
-                                              Cancel
-                                          </button>
-
-                                          <button
-                                              onClick={() => saveEditedPrompt(index)}
-                                              className="cursor-pointer px-4 py-2 rounded-lg bg-black text-white hover:bg-slate-800"
-                                          >
-                                              Save
-                                          </button>
-
-                                      </div>
-                                  </div>
-
-                                  
-                                )
-                                :
-                                (                            
-                                  <div className="prose prose-lg max-w-none">
-
-                                    <>
-                                    
-                                    {msg.image_url && (
-                                        <img
-                                            src={msg.image_url}
-                                            alt="Generated"
-                                            className="mt-3 rounded-xl border shadow max-w-full"
-                                            loading="lazy"
-                                        />
-
-                                    )}
-                                    {msg.content && ( /<\/?(div|table|h[1-6]|img|ul|ol|li|p|a|b|br|hr)/i.test(msg.content)
-
-                                    ?
-
-                                      <div
-                                          className="prose prose-lg max-w-none"
-                                          dangerouslySetInnerHTML={{
-                                              __html: msg.content
-                                          }}
-                                      />
-
-                                    :
-
-                                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}
-                                                    components={{
-                                                        h1: ({ children }) => (
-                                                            <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900">
-                                                                {children}
-                                                            </h1>
-                                                        ),
-                                                        h2: ({ children }) => (
-                                                            <h2 className="text-2xl font-semibold mt-7 mb-3 text-gray-800">
-                                                                {children}
-                                                            </h2>
-                                                        ),
-                                                        h3: ({ children }) => (
-                                                            <h3 className="text-xl font-semibold mt-6 mb-2 text-gray-800">
-                                                                {children}
-                                                            </h3>
-                                                        ),
-                                                        p: ({ children }) => (
-                                                            <div className={
-                                                                  msg.role === "user"
-                                                                      ? "leading-7 text-[15px] break-words m-0"
-                                                                      : "leading-8 text-[15px] text-gray-800 mb-1 break-words"
-                                                                  }>
-                                                              {children}
-                                                            </div>
-                                                        ),
-                                                        ul: ({ children }) => (
-                                                            <ul className="list-disc ml-6 mb-4 space-y-2">
-                                                                {children}
-                                                            </ul>
-                                                        ),
-                                                        ol: ({ children }) => (
-                                                            <ol className="list-decimal ml-6 mb-4 space-y-2">
-                                                                {children}
-                                                            </ol>
-                                                        ),
-                                                        li: ({ children }) => (
-                                                            <li className="leading-7 text-gray-800">
-                                                                {children}
-                                                            </li>
-                                                        ),
-                                                        blockquote: ({ children }) => (
-                                                            <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 my-4">
-                                                                {children}
-                                                            </blockquote>
-                                                        ),
-                                                        img: ({ src, alt }) => (
-                                                          <div className="my-6">
-                                                              <img src={src} alt={alt} className="rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300 max-w-full" />
-                                                              {alt && (
-                                                                  <div className="text-center text-sm text-gray-500 mt-2">
-                                                                      {alt}
-                                                                  </div>
-                                                              )}
-                                                          </div>
-                                                      ),
-                                                        code({ inline, className, children }) {
-
-                                                            const text = String(children).replace(/\n$/, "");
-
-                                                            /*
-                                                            -----------------------------
-                                                            CHART BLOCK
-                                                            -----------------------------
-                                                            */
-                                                            if (className === "language-chart")
-                                                            {
-                                                              try 
-                                                              {
-                                                                  const chartData = JSON.parse(text);
-
-                                                                  return (
-                                                                      <CustomChart data={chartData} />
-                                                                  );
-
-                                                              }
-                                                              catch
-                                                              {
-                                                                  return (
-                                                                      <div className="text-red-500 text-sm">
-                                                                          Invalid chart data
-                                                                      </div>
-                                                                  );
-                                                              }
-                                                            }
-
-                                                            /*
-                                                              -----------------------------
-                                                              CODE SYNTAX HIGHLIGHTING
-                                                              -----------------------------
-                                                              */
-
-                                                            const match = /language-(\w+)/.exec(className || "");
-                                                            if(!inline && match)
-                                                            {
-                                                              return (
-                                                                <div className="relative rounded-xl overflow-hidden">
-                                                                  <div className="bg-slate-800 px-4 py-2 flex justify-between text-sm text-white">
-                                                                      <span>{match[1].toUpperCase()}</span>
-                                                                      <button className="cursor-pointer" 
-                                                                              onClick={() => {
-                                                                                navigator.clipboard.writeText(text);
-                                                                                toast.success("Copied!");
-                                                                              }}
-                                                                      >
-                                                                          📋 Copy
-                                                                      </button>
-                                                                  </div>
-                                                                  
-                                                                    <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div"
-                                                                        customStyle={{
-                                                                            borderRadius: "16px",
-                                                                            padding: "20px",
-                                                                            fontSize: "14px",
-                                                                            marginTop: "20px",
-                                                                            marginBottom: "20px"
-                                                                        }}
-                                                                    >
-                                                                        {text}
-                                                                    </SyntaxHighlighter>
-                                                                </div>
-                                                              );
-                                                            }
-
-                                                            /*
-                                                            -----------------------------
-                                                            INLINE CODE
-                                                            -----------------------------
-                                                            */
-                                                            if (inline) {
-
-                                                                return (
-                                                                  <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm">
-                                                                    {children}
-                                                                  </code>
-                                                                );
-                                                            }
-
-                                                            return (
-                                                              <code className={className}>
-                                                                {children}
-                                                              </code>
-                                                            );
-
-                                                        },
-
-                                                        pre: ({ children }) => (
-                                                          <pre className="whitespace-pre-wrap break-words overflow-x-auto bg-slate-900 p-4 rounded-xl">
-                                                            {children}
-                                                          </pre>
-                                                        ),
-                                                        table: ({ children }) => (
-                                                            <div className="overflow-x-auto my-6">
-                                                                <table className="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm">
-                                                                    {children}
-                                                                </table>
-                                                            </div>
-                                                        ),
-                                                        thead: ({ children }) => (
-                                                            <thead className="bg-gray-100">
-                                                                {children}
-                                                            </thead>
-                                                        ),
-                                                        th: ({ children }) => (
-                                                            <th className="bg-gray-100 px-4 py-3 border-b text-left font-semibold">
-                                                                {children}
-                                                            </th>
-                                                        ),
-                                                        td: ({ children }) => (
-                                                            <td className="px-4 py-3 border-b text-gray-700">
-                                                                {children}
-                                                            </td>
-                                                        )
-                                                    }}
-                                                >
-                                                    {msg.content}
-                                      </ReactMarkdown>
-                                    )}
-
-                                    </>
-
-                                      {msg.role === "user" && (
-                                        <div className="flex justify-end gap-2 mt-3 opacity-0 group-hover:opacity-100 transition">
-                                            <button
-                                              title="Copy"
-                                              className="h-8 w-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
-                                              onClick={() => {copyMessage(msg.content);}}
-                                          >📋</button>
-
-                                            <button title="Edit Prompt"
-                                                onClick={() => {
-                                                    setEditingIndex(index);
-                                                    setEditingText(msg.content);
-                                                }}
-                                                className="h-8 w-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
-                                            >
-                                                ✏️
-                                            </button>
-                                          </div>
-                                      )}
-                                    
-                                    {msg.content && msg.role === "assistant" && (
-
-                                      <div className="flex items-center gap-2 mt-2">
-                                          <button title="Copy"
-                                              className="cursor-pointer text-gray-400 hover:text-gray-700 text-sm"
-                                              onClick={() => {copyMessage(msg.content);}}
-                                          >📋</button>
-
-                                          {/* <button title="Regenerate"
-                                              className="cursor-pointer text-gray-400 hover:text-gray-700 ml-2"
-                                              onClick={() => regenerateResponse(msg)}
-                                          >🔄</button> */}
-
-                                          <button className="cursor-pointer" title="Like"
-                                              onClick={() => submitFeedback(msg.id, "like")}
-                                          >
-                                            {
-                                                msg.feedback === "like"
-                                                ?
-                                                <HandThumbUpSolid className="w-5 h-5 text-green-600"/>
-                                                :
-                                                <HandThumbUpIcon className="w-5 h-5 text-gray-400"/>
-                                            }
-                                          </button>
-
-                                          <button className="cursor-pointer" title="Dislike"
-                                              onClick={() => {
-                                                  setSelectedMessageId(msg.id);
-                                                  setFeedbackModalOpen(true);
-                                              }}
-                                          >
-                                            {
-                                                msg.feedback === "dislike"
-                                                ?
-                                                <HandThumbDownSolid className="w-5 h-5 text-red-600"/>
-                                                :
-                                                <HandThumbDownIcon className="w-5 h-5 text-gray-400"/>
-                                            }
-                                          </button>
-                                          
-                                          {(!isSpeaking || (isSpeaking && speakingMessageId != msg.id) || speakingMessageId == null) && (
-                                          <button onClick={() => speakText(msg.id, msg.content)} title="Play" 
-                                          className="cursor-pointer text-gray-500 hover:text-black">▶</button>
-                                          )}
-                                          
-                                          {speakingMessageId == msg.id && isSpeaking && (
-                                            <>
-                                              <button title={isPaused ? "Resume" : "Pause"} className="cursor-pointer text-gray-500 hover:text-black"
-                                              onClick={
-                                                      isPaused
-                                                          ? resumeSpeaking
-                                                          : pauseSpeaking
-                                                  }
-                                              >
-                                                  {isPaused ? "▶" : "⏸"}
-                                              </button>
-
-                                              <button className="cursor-pointer text-gray-500 hover:text-black"
-                                                  onClick={stopSpeaking}
-                                              >
-                                                  ⏹
-                                              </button>
-                                            </>
-                                            )}
-                                            
-
-                                      </div>
-                                      )
-                                    }
-                                  </div>
-                                )
-                              }
-                            </div>
-                          </div>
-                        </motion.div>
-                    ))}
-                    </div>
-              )}
-              </>
-            )}
-        </div>
-
-        <div ref={messagesEndRef}></div>
-
-        {status && (
-          <div className="text-sm text-gray-500 mb-2 animate-pulse">
-            {status}
-          </div>
-        )}
-
-        
-        {steps && steps.length > 0 && (        
-          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 mb-3">
-            <div className="flex items-center gap-2 font-semibold mb-2">
-              <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-              Agent Steps ({steps.length})
-              <div className="text-gray-500 text-sm">
-                  • {(totalDuration / 1000).toFixed(1)}s
-              </div>
-            </div>
-            {steps.map((step, indexS) => (                      
-                <div key={indexS} className="flex items-center gap-2 text-sm mb-1 ">
-
-                  {step.status === "running"}
-
-                  {step.status === "completed"}
-
-                  {step.status === "error" && "❌"}
-
-                  <span><span className="text-gray-500 text-xs">{(indexS + 1).toString().padStart(2, "0")}.</span> {step.icon} {step.step}</span>
-
-                  <span className="text-gray-500 text-xs">
-                    {step.duration ? `(${(step.duration / 1000).toFixed(1)}s)` : ""}
-                  </span>
-                </div>            
-            ))}
-          </div>
-        )}
-        
-        <div className="border-t border-slate-200 bg-white/90 backdrop-blur-xl px-6 py-5 shadow-inner">
-
-    {/* FILE PREVIEW */}
-    {selectedFile && (
-      <div className="mb-3">
-
-        {selectedFile.type.startsWith("image/") ? (
-          <div className="relative inline-block">
-
-            <img
-              src={URL.createObjectURL(selectedFile)}
-              alt="Preview"
-              className="w-24 h-24 object-cover rounded-xl border"
-            />
-
-            <button
-              onClick={() => setSelectedFile(null)}
-              className="cursor-pointer absolute -top-2 -right-2 bg-white rounded-full shadow p-1 text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
-
-          </div>
-        ) : (isAudioFile(selectedFile) ? (
-            <div className="bg-gray-100 rounded-xl p-3">
-              <div className="font-medium mb-2">
-                🎵 {selectedFile.name}
-              </div>
-
-              <audio
-                controls
-                className="w-full"
-                src={URL.createObjectURL(selectedFile)}
-              />
-              <button onClick={() => setSelectedFile(null)} className="cursor-pointer text-red-500 hover:text-red-700">✕</button>
-            </div>
-            
-            ) : (
-
-          <div className="flex items-center justify-between bg-gray-100 rounded-xl px-4 py-3">
-
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">📄</span>
-
-              <div>
-                <div className="font-medium text-sm">
-                  {selectedFile.name}
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-500 text-white flex items-center justify-center text-xl shadow-lg">
+                    🤖
                 </div>
 
-                {/* <div className="text-xs text-gray-500">
-                  {(selectedFile.size / 1024).toFixed(1)} KB
-                </div> */}
-              </div>
+                <div>
+                    <h2 className="text-xl font-semibold text-slate-900">
+                        General AI Assistant
+                    </h2>
+
+                    <p className="text-sm text-slate-500">
+                        Ask anything • Generate ideas • Write code • Analyze files
+                    </p>
+                </div>
+
             </div>
-
-            <button
-              onClick={() => setSelectedFile(null)}
-              className="cursor-pointer text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
-
-          </div>
-        ))}
-      </div>
-    )}
-
-    {/* CHAT INPUT AREA */}
-    <div
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      className={`
-        relative
-        border
-        rounded-3xl
-        p-3
-        transition-all
-        duration-200
-        ${
-          isDragging
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300"
-        }
-      `}
-    >
-
-      {/* DRAG OVERLAY */}
-      {isDragging && (
-        <div className="absolute inset-0 z-20 bg-blue-50 border-2 border-dashed border-blue-500 rounded-3xl flex flex-col items-center justify-center">
-
-          <div className="text-5xl mb-2">
-            📂
           </div>
 
-          <div className="font-semibold">
-            Drop file here
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            {messages.length === 0 ? (
+                  isLoadingLocal == false && (
+                      /* Welcome Screen */
+                      <WelcomeScreen askSuggestionToAI={handleSuggestion} />
+                  )
+              ) : (
+                <>
+                {messages && (
+
+                  <div className="flex-1 overflow-y-auto px-8 py-8 space-y-8 bg-gradient-to-b from-slate-50 via-white to-slate-100">
+                      
+                      {messages.map((msg, index) => (                
+                          
+                          <motion.div key={index} initial={{ opacity: 0, y: 10}} animate={{ opacity: 1, y: 0 }} transition={{duration: 0.2}}>
+                            <div key={index} className={msg.role === "user"? "flex justify-end": "text-left"}>
+                              <div
+                                  className={
+                                  msg.role === "user"
+                                      ? "group inline-flex items-center justify-start max-w-[70%] px-5 py-3 rounded-2xl bg-gradient-to-r from-gray-100 to-gray-100 shadow-lg" 
+                                      : "group w-full rounded-[28px] bg-white border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 px-7 py-6"                                 }
+                              >
+                                {
+                                  editingIndex === index ?
+                                  (
+                                    <div>
+                                        <textarea
+                                            value={editingText}
+                                            onChange={(e)=>setEditingText(e.target.value)}
+                                            className="w-full rounded-2xl bg-blue-200 text-black px-5 py-3 border-2 border-blue-400 resize-none outline-none" />
+
+                                        <div className="flex justify-end gap-2 mt-3">
+
+                                            <button
+                                                onClick={() => setEditingIndex(null)}
+                                                className="cursor-pointer px-4 py-2 rounded-lg hover:bg-slate-100"
+                                            >
+                                                Cancel
+                                            </button>
+
+                                            <button
+                                                onClick={() => saveEditedPrompt(index)}
+                                                className="cursor-pointer px-4 py-2 rounded-lg bg-black text-white hover:bg-slate-800"
+                                            >
+                                                Save
+                                            </button>
+
+                                        </div>
+                                    </div>
+
+                                    
+                                  )
+                                  :
+                                  (                            
+                                    <div className="prose prose-lg max-w-none">
+
+                                      <>
+                                      
+                                      {msg.image_url && (
+                                          <img
+                                              src={msg.image_url}
+                                              alt="Generated"
+                                              className="mt-3 rounded-xl border shadow max-w-full"
+                                              loading="lazy"
+                                          />
+
+                                      )}
+                                      {msg.content && ( /<\/?(div|table|h[1-6]|img|ul|ol|li|p|a|b|br|hr)/i.test(msg.content)
+
+                                      ?
+
+                                        <div
+                                            className="prose prose-lg max-w-none"
+                                            dangerouslySetInnerHTML={{
+                                                __html: msg.content
+                                            }}
+                                        />
+
+                                      :
+
+                                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}
+                                                      components={{
+                                                          h1: ({ children }) => (
+                                                              <h1 className="text-3xl font-bold mt-8 mb-4 text-gray-900">
+                                                                  {children}
+                                                              </h1>
+                                                          ),
+                                                          h2: ({ children }) => (
+                                                              <h2 className="text-2xl font-semibold mt-7 mb-3 text-gray-800">
+                                                                  {children}
+                                                              </h2>
+                                                          ),
+                                                          h3: ({ children }) => (
+                                                              <h3 className="text-xl font-semibold mt-6 mb-2 text-gray-800">
+                                                                  {children}
+                                                              </h3>
+                                                          ),
+                                                          p: ({ children }) => (
+                                                              <div className={
+                                                                    msg.role === "user"
+                                                                        ? "leading-7 text-[15px] break-words m-0"
+                                                                        : "leading-8 text-[15px] text-gray-800 mb-1 break-words"
+                                                                    }>
+                                                                {children}
+                                                              </div>
+                                                          ),
+                                                          ul: ({ children }) => (
+                                                              <ul className="list-disc ml-6 mb-4 space-y-2">
+                                                                  {children}
+                                                              </ul>
+                                                          ),
+                                                          ol: ({ children }) => (
+                                                              <ol className="list-decimal ml-6 mb-4 space-y-2">
+                                                                  {children}
+                                                              </ol>
+                                                          ),
+                                                          li: ({ children }) => (
+                                                              <li className="leading-7 text-gray-800">
+                                                                  {children}
+                                                              </li>
+                                                          ),
+                                                          blockquote: ({ children }) => (
+                                                              <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-600 my-4">
+                                                                  {children}
+                                                              </blockquote>
+                                                          ),
+                                                          img: ({ src, alt }) => (
+                                                            <div className="my-6">
+                                                                <img src={src} alt={alt} className="rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300 max-w-full" />
+                                                                {alt && (
+                                                                    <div className="text-center text-sm text-gray-500 mt-2">
+                                                                        {alt}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ),
+                                                          code({ inline, className, children }) {
+
+                                                              const text = String(children).replace(/\n$/, "");
+
+                                                              /*
+                                                              -----------------------------
+                                                              CHART BLOCK
+                                                              -----------------------------
+                                                              */
+                                                              if (className === "language-chart")
+                                                              {
+                                                                try 
+                                                                {
+                                                                    const chartData = JSON.parse(text);
+
+                                                                    return (
+                                                                        <CustomChart data={chartData} />
+                                                                    );
+
+                                                                }
+                                                                catch
+                                                                {
+                                                                    return (
+                                                                        <div className="text-red-500 text-sm">
+                                                                            Invalid chart data
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                              }
+
+                                                              /*
+                                                                -----------------------------
+                                                                CODE SYNTAX HIGHLIGHTING
+                                                                -----------------------------
+                                                                */
+
+                                                              const match = /language-(\w+)/.exec(className || "");
+                                                              if(!inline && match)
+                                                              {
+                                                                return (
+                                                                  <div className="relative rounded-xl overflow-hidden">
+                                                                    <div className="bg-slate-800 px-4 py-2 flex justify-between text-sm text-white">
+                                                                        <span>{match[1].toUpperCase()}</span>
+                                                                        <button className="cursor-pointer" 
+                                                                                onClick={() => {
+                                                                                  navigator.clipboard.writeText(text);
+                                                                                  toast.success("Copied!");
+                                                                                }}
+                                                                        >
+                                                                            📋 Copy
+                                                                        </button>
+                                                                    </div>
+                                                                    
+                                                                      <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div"
+                                                                          customStyle={{
+                                                                              borderRadius: "16px",
+                                                                              padding: "20px",
+                                                                              fontSize: "14px",
+                                                                              marginTop: "20px",
+                                                                              marginBottom: "20px"
+                                                                          }}
+                                                                      >
+                                                                          {text}
+                                                                      </SyntaxHighlighter>
+                                                                  </div>
+                                                                );
+                                                              }
+
+                                                              /*
+                                                              -----------------------------
+                                                              INLINE CODE
+                                                              -----------------------------
+                                                              */
+                                                              if (inline) {
+
+                                                                  return (
+                                                                    <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm">
+                                                                      {children}
+                                                                    </code>
+                                                                  );
+                                                              }
+
+                                                              return (
+                                                                <code className={className}>
+                                                                  {children}
+                                                                </code>
+                                                              );
+
+                                                          },
+
+                                                          pre: ({ children }) => (
+                                                            <pre className="whitespace-pre-wrap break-words overflow-x-auto bg-slate-900 p-4 rounded-xl">
+                                                              {children}
+                                                            </pre>
+                                                          ),
+                                                          table: ({ children }) => (
+                                                              <div className="overflow-x-auto my-6">
+                                                                  <table className="min-w-full border border-gray-200 rounded-2xl overflow-hidden text-sm">
+                                                                      {children}
+                                                                  </table>
+                                                              </div>
+                                                          ),
+                                                          thead: ({ children }) => (
+                                                              <thead className="bg-gray-100">
+                                                                  {children}
+                                                              </thead>
+                                                          ),
+                                                          th: ({ children }) => (
+                                                              <th className="bg-gray-100 px-4 py-3 border-b text-left font-semibold">
+                                                                  {children}
+                                                              </th>
+                                                          ),
+                                                          td: ({ children }) => (
+                                                              <td className="px-4 py-3 border-b text-gray-700">
+                                                                  {children}
+                                                              </td>
+                                                          )
+                                                      }}
+                                                  >
+                                                      {msg.content}
+                                        </ReactMarkdown>
+                                      )}
+
+                                      </>
+
+                                        {msg.role === "user" && (
+                                          <div className="flex justify-end gap-2 mt-3 opacity-0 group-hover:opacity-100 transition">
+                                              <button
+                                                title="Copy"
+                                                className="h-8 w-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
+                                                onClick={() => {copyMessage(msg.content);}}
+                                            >📋</button>
+
+                                              <button title="Edit Prompt"
+                                                  onClick={() => {
+                                                      setEditingIndex(index);
+                                                      setEditingText(msg.content);
+                                                  }}
+                                                  className="h-8 w-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
+                                              >
+                                                  ✏️
+                                              </button>
+                                            </div>
+                                        )}
+                                      
+                                      {msg.content && msg.role === "assistant" && (
+
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <button title="Copy"
+                                                className="cursor-pointer text-gray-400 hover:text-gray-700 text-sm"
+                                                onClick={() => {copyMessage(msg.content);}}
+                                            >📋</button>
+
+                                            {/* <button title="Regenerate"
+                                                className="cursor-pointer text-gray-400 hover:text-gray-700 ml-2"
+                                                onClick={() => regenerateResponse(msg)}
+                                            >🔄</button> */}
+
+                                            <button className="cursor-pointer" title="Like"
+                                                onClick={() => submitFeedback(msg.id, "like")}
+                                            >
+                                              {
+                                                  msg.feedback === "like"
+                                                  ?
+                                                  <HandThumbUpSolid className="w-5 h-5 text-green-600"/>
+                                                  :
+                                                  <HandThumbUpIcon className="w-5 h-5 text-gray-400"/>
+                                              }
+                                            </button>
+
+                                            <button className="cursor-pointer" title="Dislike"
+                                                onClick={() => {
+                                                    setSelectedMessageId(msg.id);
+                                                    setFeedbackModalOpen(true);
+                                                }}
+                                            >
+                                              {
+                                                  msg.feedback === "dislike"
+                                                  ?
+                                                  <HandThumbDownSolid className="w-5 h-5 text-red-600"/>
+                                                  :
+                                                  <HandThumbDownIcon className="w-5 h-5 text-gray-400"/>
+                                              }
+                                            </button>
+                                            
+                                            {(!isSpeaking || (isSpeaking && speakingMessageId != msg.id) || speakingMessageId == null) && (
+                                            <button onClick={() => speakText(msg.id, msg.content)} title="Play" 
+                                            className="cursor-pointer text-gray-500 hover:text-black">▶</button>
+                                            )}
+                                            
+                                            {speakingMessageId == msg.id && isSpeaking && (
+                                              <>
+                                                <button title={isPaused ? "Resume" : "Pause"} className="cursor-pointer text-gray-500 hover:text-black"
+                                                onClick={
+                                                        isPaused
+                                                            ? resumeSpeaking
+                                                            : pauseSpeaking
+                                                    }
+                                                >
+                                                    {isPaused ? "▶" : "⏸"}
+                                                </button>
+
+                                                <button className="cursor-pointer text-gray-500 hover:text-black"
+                                                    onClick={stopSpeaking}
+                                                >
+                                                    ⏹
+                                                </button>
+                                              </>
+                                              )}
+                                              
+
+                                        </div>
+                                        )
+                                      }
+                                    </div>
+                                  )
+                                }
+                              </div>
+                            </div>
+                          </motion.div>
+                      ))}
+                      </div>
+                )}
+                </>
+              )}
           </div>
 
-          <div className="text-sm text-gray-500">
-            PDF, Word, Excel, Images, Text
-          </div>
+          <div ref={messagesEndRef}></div>
 
+          {status && (
+            <div className="text-sm text-gray-500 mb-2 animate-pulse">
+              {status}
+            </div>
+          )}
+
+          
+          {steps && steps.length > 0 && (        
+            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 mb-3">
+              <div className="flex items-center gap-2 font-semibold mb-2">
+                <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                Agent Steps ({steps.length})
+                <div className="text-gray-500 text-sm">
+                    • {(totalDuration / 1000).toFixed(1)}s
+                </div>
+              </div>
+              {steps.map((step, indexS) => (                      
+                  <div key={indexS} className="flex items-center gap-2 text-sm mb-1 ">
+
+                    {step.status === "running"}
+
+                    {step.status === "completed"}
+
+                    {step.status === "error" && "❌"}
+
+                    <span><span className="text-gray-500 text-xs">{(indexS + 1).toString().padStart(2, "0")}.</span> {step.icon} {step.step}</span>
+
+                    <span className="text-gray-500 text-xs">
+                      {step.duration ? `(${(step.duration / 1000).toFixed(1)}s)` : ""}
+                    </span>
+                  </div>            
+              ))}
+            </div>
+          )}
+          
+          <div className="border-t border-slate-200 bg-white/90 backdrop-blur-xl px-6 py-5 shadow-inner">
+
+      {/* FILE PREVIEW */}
+      {selectedFile && (
+        <div className="mb-3">
+
+          {selectedFile.type.startsWith("image/") ? (
+            <div className="relative inline-block">
+
+              <img
+                src={URL.createObjectURL(selectedFile)}
+                alt="Preview"
+                className="w-24 h-24 object-cover rounded-xl border"
+              />
+
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="cursor-pointer absolute -top-2 -right-2 bg-white rounded-full shadow p-1 text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
+
+            </div>
+          ) : (isAudioFile(selectedFile) ? (
+              <div className="bg-gray-100 rounded-xl p-3">
+                <div className="font-medium mb-2">
+                  🎵 {selectedFile.name}
+                </div>
+
+                <audio
+                  controls
+                  className="w-full"
+                  src={URL.createObjectURL(selectedFile)}
+                />
+                <button onClick={() => setSelectedFile(null)} className="cursor-pointer text-red-500 hover:text-red-700">✕</button>
+              </div>
+              
+              ) : (
+
+            <div className="flex items-center justify-between bg-gray-100 rounded-xl px-4 py-3">
+
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📄</span>
+
+                <div>
+                  <div className="font-medium text-sm">
+                    {selectedFile.name}
+                  </div>
+
+                  {/* <div className="text-xs text-gray-500">
+                    {(selectedFile.size / 1024).toFixed(1)} KB
+                  </div> */}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="cursor-pointer text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
+
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="flex items-end gap-3">
-
-        {/* MODEL */}
-        <select
-          className="border rounded-2xl px-3 py-2 bg-white"
-          value={selectedModel}
-          onChange={(e) => setSelectedModel(e.target.value)}
-        >
-          <option value="">Model</option>
-          <option value="gemini">Gemini</option>
-          <option value="openai">OpenAI</option>
-          <option value="claude">Claude</option>
-          <option value="grok">Grok</option>
-          <option value="openrouter">OpenRouter</option>
-          <option value="groq">Groq</option>
-        </select>
-
-        {/* TEXTAREA */}
-        <div className="flex-1 relative">
-
-          <input type="text" id="txtQuestion" name="txtQuestion"
-            ref={inputRef}
-            value={question}
-            onKeyDown={handleSearchKeyDown}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Message AI Assistant..."
-            className="w-full resize-none outline-none px-10 py-2"
-          />
-
-          {/* ATTACH BUTTON */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current.click()}
-            className="cursor-pointer absolute left-2 bottom-3 text-gray-500 hover:text-black"
-          >
-            <PaperClipIcon className="w-5 h-5 cursor-pointer" />
-          </button>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            hidden
-            onChange={(e) => {
-              if (e.target.files?.length) {
-                setSelectedFile(e.target.files[0]);
-              }
-            }}
-          />
-
-        </div>
-
-        {speechSupported ? (
-          <button onClick={startListening} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90"
-            title="Speak">🎤</button>
-          ) : (
-          <button onClick={isRecording ? stopRecording : startRecording }
-                className={`cursor-pointer rounded-full w-12 h-12 flex items-center justify-center ${
-                            isRecording
-                              ? "bg-red-500 text-white"
-                              : "bg-gray-200"
-                          }`}
-          >{isRecording ? "⏹" : "🎤"}</button>
-          )}
-        
-          {
-            isLoadingLocal ?
-            (
-              isGenerating ?
-
-              <button title="Stop" onClick={stopGenerating} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
-                  ■
-              </button>
-              :
-              <button disabled className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              </button>
-            )
-            :
-            <button title="Send" onClick={() => askAI()} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
-                ➤
-            </button>
+      {/* CHAT INPUT AREA */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        className={`
+          relative
+          border
+          rounded-3xl
+          p-3
+          transition-all
+          duration-200
+          ${
+            isDragging
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300"
           }
+        `}
+      >
 
+        {/* DRAG OVERLAY */}
+        {isDragging && (
+          <div className="absolute inset-0 z-20 bg-blue-50 border-2 border-dashed border-blue-500 rounded-3xl flex flex-col items-center justify-center">
+
+            <div className="text-5xl mb-2">
+              📂
+            </div>
+
+            <div className="font-semibold">
+              Drop file here
+            </div>
+
+            <div className="text-sm text-gray-500">
+              PDF, Word, Excel, Images, Text
+            </div>
+
+          </div>
+        )}
+
+        <div className="flex items-end gap-3">
+
+          {/* MODEL */}
+          <select
+            className="border rounded-2xl px-3 py-2 bg-white"
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+          >
+            <option value="">Model</option>
+            <option value="gemini">Gemini</option>
+            <option value="openai">OpenAI</option>
+            <option value="claude">Claude</option>
+            <option value="grok">Grok</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="groq">Groq</option>
+          </select>
+
+          {/* TEXTAREA */}
+          <div className="flex-1 relative">
+
+            <input type="text" id="txtQuestion" name="txtQuestion"
+              ref={inputRef}
+              value={question}
+              onKeyDown={handleSearchKeyDown}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Message AI Assistant..."
+              className="w-full resize-none outline-none px-10 py-2"
+            />
+
+            {/* ATTACH BUTTON */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current.click()}
+              className="cursor-pointer absolute left-2 bottom-3 text-gray-500 hover:text-black"
+            >
+              <PaperClipIcon className="w-5 h-5 cursor-pointer" />
+            </button>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              hidden
+              onChange={(e) => {
+                if (e.target.files?.length) {
+                  setSelectedFile(e.target.files[0]);
+                }
+              }}
+            />
+
+          </div>
+
+          {speechSupported ? (
+            <button onClick={startListening} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90"
+              title="Speak">🎤</button>
+            ) : (
+            <button onClick={isRecording ? stopRecording : startRecording }
+                  className={`cursor-pointer rounded-full w-12 h-12 flex items-center justify-center ${
+                              isRecording
+                                ? "bg-red-500 text-white"
+                                : "bg-gray-200"
+                            }`}
+            >{isRecording ? "⏹" : "🎤"}</button>
+            )}
+          
+            {
+              isLoadingLocal ?
+              (
+                isGenerating ?
+
+                <button title="Stop" onClick={stopGenerating} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
+                    ■
+                </button>
+                :
+                <button disabled className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </button>
+              )
+              :
+              <button title="Send" onClick={() => askAI()} className="cursor-pointer bg-black text-white rounded-full w-12 h-12 flex items-center justify-center hover:opacity-90">
+                  ➤
+              </button>
+            }
+
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-
+        </div>
+      </div>
   {
     feedbackModalOpen && (
 

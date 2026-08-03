@@ -24,9 +24,12 @@ ZAPIER_APPS_CONFIG = {
             "reply_email": {
                 "action": "reply_to_message",
                 "tool_name": "gmail_reply_to_email"
+            },
+            "read_email": {
+                "action": "find",
+                "tool_name": "gmail_find_email"
             }
         }
-
     },
 
     "google_sheet": {

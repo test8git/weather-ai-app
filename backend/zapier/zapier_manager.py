@@ -1,5 +1,6 @@
 import asyncio
 import os
+import json
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -68,23 +69,66 @@ class ZapierManager:
 
     def get_tool(self, name):
 
+        if name not in self.tools:
+
+            raise ValueError(
+                f"Zapier tool '{name}' not found.\n"
+                f"Available tools:\n"
+                + "\n".join(sorted(self.tools.keys()))
+            )
+
         return self.tools[name]
 
-
     async def _execute(self, selected_api, action, tool_name, params, instructions, output):
+        #
+        # New MCP servers expose the actual tool directly
+        #
 
-        tool = self.get_tool("execute_zapier_write_action")
+        tool = self.get_tool(tool_name)
 
-        return await tool.ainvoke(
-            {
-                "selected_api": selected_api,
-                "action": action,
-                "tool_name": tool_name,
-                "instructions": instructions,
-                "params": params,
-                "output": output
-            }
-        )
+        # payload = {
+        #     "selected_api": selected_api,
+        #     "action": action,
+        #     "tool_name": tool_name,
+        #     "instructions": instructions,
+        #     "params": params,
+        #     "output": output,
+        # }
+
+        payload = {
+            "selected_api": selected_api,
+            "action": action,
+            "tool_name": tool_name,
+            "instructions": instructions,
+            "output": output,
+        }
+
+        if tool_name == "gmail_find_email":
+            payload["query"] = params
+        else:
+            payload["params"] = params
+
+
+
+        # print("PAYLOAD")
+        # print(json.dumps(payload, indent=2))
+
+        return await tool.ainvoke(payload)
+
+        # # # tool = self.get_tool("gmail_find_email")
+
+        # # # result = await tool.ainvoke(
+        # # # {
+        # # #     "instructions":"Find newest email.",
+        # # #     "query":"from:zapier in:inbox"
+        # # # })
+
+        # print("TYPE")
+        # print(type(result))
+        # print("REPR")
+        # print(repr(result))
+        # print("RESPONSE")
+        # print(result)
 
 
     async def execute(self, selected_api, action, tool_name, params, instructions="", output="Return success or failure."):

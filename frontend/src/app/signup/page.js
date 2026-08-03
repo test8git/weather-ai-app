@@ -87,8 +87,10 @@ export default function SignupPage() {
         const { error } = await supabase.auth.signUp({
 
             email,
-
-            password
+            password,
+            options: {
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}`
+            }
 
         });
 
@@ -113,6 +115,29 @@ export default function SignupPage() {
 
     }
 
+};
+
+//Sign in using Google or Github
+const singInOAuth = async(provider) =>
+{
+    try
+    {
+        setGlobalLoading(true);
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: provider,
+            options: {
+                redirectTo:
+                    `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+
+            }
+        });
+        if (error)
+            toast.error(error);
+    }
+    finally 
+    {
+        setGlobalLoading(false);
+    }
 };
 
   return (
@@ -251,6 +276,32 @@ export default function SignupPage() {
                 "
             >
                 Create Account
+            </button>
+
+            {/* Divider */}
+
+            <div className="flex items-center gap-4 my-8">
+                <div className="flex-1 h-px bg-gray-300" />
+                <span className="text-sm text-gray-500">
+                    OR CONTINUE WITH
+                </span>
+                <div className="flex-1 h-px bg-gray-300" />
+            </div>
+
+            {/* Google */}
+
+            <button onClick={() => singInOAuth("google")}
+                className="cursor-pointer w-full h-14 rounded-xl border border-gray-300 flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+                <img src="images/google.png" className="w-5 h-5" alt="Google" />
+                Continue with Google
+            </button>
+
+            {/* Github */}
+
+            <button onClick={() => singInOAuth("github")}
+                className="cursor-pointer mt-4 w-full h-14 rounded-xl border border-gray-300 flex items-center justify-center gap-3 hover:bg-gray-50 transition" >
+                <img src="images/github.png" className="w-5 h-5" alt="GitHub" />
+                Continue with GitHub
             </button>
 
             {/* Login */}

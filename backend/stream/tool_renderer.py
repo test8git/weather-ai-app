@@ -260,6 +260,33 @@ class ToolRenderer:
         # ----------------------------
         #
 
+        #
+        # ----------------------------
+        # Zapier Follow-up Question
+        # ----------------------------
+        #
+
+        if "followUpQuestion" in tool_result:
+
+            question = tool_result["followUpQuestion"]
+
+            ctx.answer = question
+
+            ctx.finished = True
+
+            events.append(
+                {
+                    "type": "tool",
+                    "content": question,
+                    "sse": sse_event(
+                        "message",
+                        question,
+                    ),
+                }
+            )
+
+            return True, events
+
         if tool_result.get("status") == "SUCCESS":
 
             #
@@ -284,6 +311,86 @@ class ToolRenderer:
 
                 return True, events
 
+            #
+            # read_email
+            #
+
+            if tool_result.get("action") == "read_email":
+
+                ctx.finished = True
+
+                data = tool_result.get("data", {})
+
+                # # # details = (
+                # # #     data.get("results", {})
+                # # #         .get("details", [])
+                # # # )
+
+                details = data.get("results", [])
+
+                #
+                # No emails found
+                #
+
+                if not details:
+
+                    text = "No matching emails were found."
+
+                    events.append(
+                        {
+                            "type": "tool",
+                            "content": text,
+                            "sse": sse_event(
+                                "message",
+                                text,
+                            ),
+                        }
+                    )
+
+                    return True, events
+
+                #
+                # Build markdown
+                #
+
+                markdown = "# Matching Emails\n\n"
+
+                for email in details:
+
+                    # # # markdown += (
+                    # # #     f"## {email.get('subject','(No Subject)')}\n\n"
+                    # # #     f"**From:** {email.get('from','')}\n\n"
+                    # # #     f"**Date:** {email.get('date','')}\n\n"
+                    # # #     f"{email.get('snippet','')}\n\n"
+                    # # #     "---\n\n"
+                    # # # )
+
+                    from_info = email.get("from", {})
+
+                    markdown += (
+                        f"## {email.get('subject','(No Subject)')}\n\n"
+                        f"**From:** {from_info.get('name','')} "
+                        f"<{from_info.get('email','')}>\n\n"
+                        f"**Date:** {email.get('date','')}\n\n"
+                        f"{email.get('body_plain','')[:500]}\n\n"
+                        "---\n\n"
+                    )
+
+                ctx.answer = markdown
+
+                events.append(
+                    {
+                        "type": "tool",
+                        "content": markdown,
+                        "sse": sse_event(
+                            "message",
+                            markdown,
+                        ),
+                    }
+                )
+
+                return True, events    
+
         #
         # ----------------------------
         # Unknown Tool
@@ -294,222 +401,3 @@ class ToolRenderer:
 
 
 tool_renderer = ToolRenderer()
-
-# # # class ToolRenderer:
-
-# # #     async def render(self, message, ctx: StreamContext):
-
-# # #         if not isinstance(message, ToolMessage):
-# # #             return False, []
-
-# # #         events = []
-
-# # #         #
-# # #         # Search progress completed
-# # #         #
-# # #         if ctx.progress.searching_started:
-
-# # #             ctx.progress.searching_started = False
-
-# # #             events.append(
-# # #                 progress_manager.searching_completed_fun()
-# # #             )
-# # #         #
-# # #         # Parse JSON
-# # #         #
-# # #         try:
-# # #             tool_result = json.loads(message.content)
-
-# # #         except Exception:
-# # #             return False, []
-
-# # #         #
-# # #         # ----------------------------
-# # #         # Calculator
-# # #         # ----------------------------
-# # #         #
-
-# # #         if tool_result.get("type") == "calculator":
-
-# # #             text = f"""
-# # #                 Expression:
-# # #                 {tool_result["expression"]}
-
-# # #                 Answer:
-# # #                 {tool_result["result"]}
-# # #                 """
-
-# # #             ctx.answer = text
-
-# # #             events.append(
-# # #                 {
-# # #                     "type": "tool",
-# # #                     "content": text,
-# # #                     "sse": sse_event(
-# # #                         "message",
-# # #                         text,
-# # #                     ),
-# # #                 }
-# # #             )
-
-# # #             return True, events
-
-# # #         #
-# # #         # ----------------------------
-# # #         # Image
-# # #         # ----------------------------
-# # #         #
-
-# # #         if tool_result.get("type") == "image":
-
-# # #             events.append(
-# # #                 {
-# # #                     "type": "image",
-# # #                     "content": tool_result["image_url"],
-# # #                     "sse": sse_event(
-# # #                         "image",
-# # #                         tool_result["image_url"],
-# # #                     ),
-# # #                 }
-# # #             )
-
-# # #             return True, events
-
-# # #         #
-# # #         # ----------------------------
-# # #         # Github
-# # #         # ----------------------------
-# # #         #
-
-# # #         if tool_result.get("type") == "github":
-
-# # #             markdown = ""
-
-# # #             for repo in tool_result["repositories"]:
-
-# # #                 body = ""
-
-# # #                 body += paragraph(repo["description"])
-
-# # #                 body += bold(f"⭐ {repo['stars']}")
-
-# # #                 body += line_break()
-
-# # #                 body += hyperlink(
-# # #                     "Open Repository",
-# # #                     repo["url"],
-# # #                 )
-
-# # #                 markdown += card(
-# # #                     repo["full_name"],
-# # #                     body,
-# # #                 )
-
-# # #             ctx.answer = markdown
-
-# # #             events.append(
-# # #                 {
-# # #                     "type": "tool",
-# # #                     "content": markdown,
-# # #                     "sse": sse_event(
-# # #                         "message",
-# # #                         markdown,
-# # #                     ),
-# # #                 }
-# # #             )
-
-# # #             return True, events
-
-# # #         #
-# # #         # ----------------------------
-# # #         # Google Places
-# # #         # ----------------------------
-# # #         #
-
-# # #         if tool_result.get("type") == "places":
-
-# # #             items = []
-
-# # #             for place in tool_result["places"]:
-
-# # #                 if place.get("google_maps"):
-
-# # #                     link = hyperlink(
-# # #                         "Open Google Maps",
-# # #                         place["google_maps"],
-# # #                     )
-
-# # #                 else:
-
-# # #                     link = hyperlink(
-# # #                         "Open Link",
-# # #                         place.get("url", ""),
-# # #                     )
-
-# # #                 items.append(
-
-# # #                     bold(place["name"])
-# # #                     + line_break()
-# # #                     + link
-
-# # #                 )
-
-# # #             markdown = heading(ctx.current_question)
-
-# # #             markdown += ordered_list(items)
-
-# # #             ctx.answer = markdown
-
-# # #             events.append(
-# # #                 {
-# # #                     "type": "tool",
-# # #                     "content": markdown,
-# # #                     "sse": sse_event(
-# # #                         "message",
-# # #                         markdown,
-# # #                     ),
-# # #                 }
-# # #             )
-
-# # #             return True, events
-
-# # #         #
-# # #         # ----------------------------
-# # #         # Zapier
-# # #         # ----------------------------
-# # #         #
-
-# # #         if tool_result.get("status") == "SUCCESS":
-
-# # #             #
-# # #             # send_email
-# # #             #
-
-# # #             if tool_result.get("action") == "send_email":
-
-# # #                 ctx.skip_next_ai_message = True
-
-# # #                 events.append(
-# # #                     {
-# # #                         "type": "tool",
-# # #                         "content": f"✅ Email sent successfully to {tool_result['recipient']}",
-# # #                         "sse": sse_event(
-# # #                             "message",
-# # #                             f"✅ Email sent successfully to {tool_result['recipient']}",
-# # #                             # ""
-# # #                         ),
-# # #                     }
-# # #                 )
-
-# # #                 return True, events
-
-# # #         #
-# # #         # ----------------------------
-# # #         # Unknown Tool
-# # #         # ----------------------------
-# # #         #
-
-# # #         return False, []
-
-
-# # # tool_renderer = ToolRenderer()

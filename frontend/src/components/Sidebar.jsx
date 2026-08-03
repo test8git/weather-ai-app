@@ -10,8 +10,8 @@ import { useLoading } from "@/context/LoadingContext"
 
 import jsPDF from "jspdf";
 
-import { PlusIcon, EllipsisVerticalIcon, MagnifyingGlassIcon, ShareIcon, TrashIcon, ClockIcon } from "@heroicons/react/24/outline";
-import { ArchiveBoxIcon, StarIcon } from "@heroicons/react/24/solid";
+import { PlusIcon, EllipsisVerticalIcon, MagnifyingGlassIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { ArchiveBoxIcon, StarIcon  } from "@heroicons/react/24/solid";
 
 import dayjs from "dayjs";
 import isToday from "dayjs/plugin/isToday";
@@ -22,6 +22,12 @@ dayjs.extend(isYesterday);
 
 export default function Sidebar({ mode = "chat" }) {
     const { setGlobalLoading } = useLoading();
+
+    //Maintain sidebar open or close on next screen load
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return localStorage.getItem("sidebarCollapsed") === "true";
+    });
     const { user } = useAuth();
     const { conversationId, setConversationId, messages, setMessages, setNewChatTrigger, conversations, setConversations, loadConversationMessages} = useConversation();
     
@@ -46,6 +52,14 @@ export default function Sidebar({ mode = "chat" }) {
             loadConversations();
         }
     }, [user]);
+
+    useEffect(() => 
+    {
+        localStorage.setItem(
+            "sidebarCollapsed",
+            collapsed
+        );
+    }, [collapsed]);
 
     //Close Menu (three-dot menu) When Clicking Outside
     useEffect(() => {
@@ -523,45 +537,44 @@ export default function Sidebar({ mode = "chat" }) {
 
     return (
 
-        <div className="w-[320px]
-                bg-[#0B1324]
-                text-white
-                flex
-                flex-col
-                shadow-2xl">
+        <div className={`
+        ${collapsed ? "w-20" : "w-[320px]"}
+        bg-[#0B1324]
+        text-white
+        flex
+        flex-col
+        transition-all
+        duration-300
+        relative
+    `}>
 
-            {/* Logo */}
+            <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className={`absolute right-0 top-8 h-8 w-8 rounded-xl bg-white border flex items-center justify-center text-gray-400 z-50 hover:scale-105
+                        ${collapsed ? "opacity-0 hover:opacity-100" : "opacity-100"}
+                    `}
+                >
+                    {collapsed ? <span title="Expand sidebar">▶</span> : <span title="Collapse sidebar">◀</span>}
+                </button>
             {/* Header */}
 
-            <div className="border-b border-white/10 px-6 py-7">
+            <div className="border-b border-white/10 px-3 py-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg text-2xl">
+                            🤖
+                        </div>
+                        {!collapsed && (
+                            <div>
+                                <h1 className="text-xl font-bold tracking-wide">
+                                    General AI
+                                </h1>
 
-                <div className="flex items-center gap-4">
-
-                    <div
-                        className="
-                            w-14
-                            h-14
-                            rounded-2xl
-                            bg-indigo-600
-                            flex
-                            items-center
-                            justify-center
-                            shadow-lg
-                            text-2xl
-                        "
-                    >
-                        🤖
-                    </div>
-
-                    <div>
-
-                        <h1 className="text-xl font-bold tracking-wide">
-                            General AI
-                        </h1>
-
-                        <p className="text-sm text-gray-400">
-                            Your AI Workspace
-                        </p>
+                                <p className="text-sm text-gray-400">
+                                    Your AI Workspace
+                                </p>
+                            </div>
+                        )}
 
                     </div>
 
@@ -575,7 +588,7 @@ export default function Sidebar({ mode = "chat" }) {
 
                     <div className="p-6">
 
-                        <button
+                        <button title="Back to chat"
                             onClick={() => router.push("/")}
                             className="
                                 cursor-pointer
@@ -589,7 +602,7 @@ export default function Sidebar({ mode = "chat" }) {
                                 duration-200
                             "
                         >
-                            ← Back to Chat
+                            ← {!collapsed && "Back to Chat"}
                         </button>
 
                     </div>
@@ -606,6 +619,7 @@ export default function Sidebar({ mode = "chat" }) {
                 <div className="px-5 pt-5 space-y-3">
 
                     <button
+                        title="New Chat"
                         onClick={createNewChat}
                         className="
                             cursor-pointer
@@ -620,13 +634,13 @@ export default function Sidebar({ mode = "chat" }) {
                             shadow-lg
                         "
                     >
-                        <div className="flex items-center justify-center gap-2">
+                        <div className={`flex items-center ${collapsed ? "justify-center" : "justify-center gap-2"}`}>
                             <PlusIcon className="w-5 h-5"/>
-                            <span>New Chat</span>
+                            {!collapsed && <span>New Chat</span>}
                         </div>
                     </button>
                     <div className="mt-3"></div>
-                    <button
+                    <button title="View Archive"
                         onClick={() => router.push("/archive")}
                         className="
                             cursor-pointer
@@ -641,14 +655,15 @@ export default function Sidebar({ mode = "chat" }) {
                             duration-200
                         "
                     >
-                        <div className="flex items-center justify-center gap-2">
+                        <div className={`flex items-center ${collapsed ? "justify-center" : "justify-center gap-2"}`}>
                             <ArchiveBoxIcon className="w-5 h-5"/>
-                            Archive
+                            {!collapsed && <span>Archive</span>}
                         </div>
                     </button>
                 </div>
 
                 {/* Search */}
+                {!collapsed && (
                 <div className="px-5 py-5">
 
                     <div className="relative">
@@ -691,11 +706,12 @@ export default function Sidebar({ mode = "chat" }) {
                     </div>
 
                 </div>
+                )}
 
                 {/* History */}
                 <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
 
-                    {
+                    {!collapsed &&
                         favoriteConversations.length > 0 && (
 
                             <div className="mb-8">
@@ -704,12 +720,10 @@ export default function Sidebar({ mode = "chat" }) {
 
                                     <div className="flex items-center gap-2">
 
-                                        <StarIcon className="w-4 h-4 text-amber-400"/>
-
+                                        <StarIcon className="w-4 h-4 text-amber-400"/>                                        
                                         <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                                             Favorites
                                         </span>
-
                                     </div>
 
                                 </div>
@@ -730,12 +744,17 @@ export default function Sidebar({ mode = "chat" }) {
                                             <div className="flex items-center justify-between">
 
                                                 <div className="flex items-center gap-2 flex-1 truncate" onClick={() => openConversation(conv.id)}>
-                                                    <span className="truncate text-sm font-medium">
-                                                        {conv.title}
-                                                    </span>
+                                                    {!collapsed ? (
+                                                        <span className="truncate text-sm font-medium">
+                                                            {conv.title}
+                                                        </span>
+                                                    ) : (
+                                                        <div className="w-3 h-3 rounded-full bg-indigo-400"></div>
+                                                    )}
                                                 </div>
 
                                                 {/* Three Dot Menu */}
+                                                {!collapsed && (
                                                     <button onClick={(e) => {
                                                             e.stopPropagation();
                                                             setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
@@ -743,9 +762,10 @@ export default function Sidebar({ mode = "chat" }) {
                                                         className={`cursor-pointer rounded-lg transition ${menuOpenId === conv.id ? "opacity-100 bg-white/10" : "opacity-0 group-hover:opacity-100"}`}>
                                                             <EllipsisVerticalIcon className="w-5 h-5 text-slate-400 hover:text-white"/>
                                                     </button>
+                                                )}
                                             </div>
                                             {/* Popup Menu */}
-                                            {menuOpenId === conv.id && (
+                                            {!collapsed && menuOpenId === conv.id && (
                                                 <div ref={menuOpenId === conv.id ? menuRef : null} 
                                                     className="absolute right-0 top-12 w-48 rounded-xl bg-white shadow-2xl overflow-hidden z-50">
 
@@ -825,171 +845,181 @@ export default function Sidebar({ mode = "chat" }) {
 
                         )
                     }
+                    
+                    {!collapsed && (
+                    <>
+                        <div className="flex items-center justify-between mb-5">
 
-                    <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2">
 
-                        <div className="flex items-center gap-2">
-
-                            <ClockIcon className="w-4 h-4 text-gray-400"/>
-
-                            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-                                Recent Chats
-                            </span>
+                                <ClockIcon className="w-4 h-4 text-gray-400"/>
+                                {!collapsed && (
+                                    <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                        Recent Chats
+                                    </span>
+                                )}
+                            </div>
 
                         </div>
+                    
+                    
+                        <div className="space-y-2">
+                            {
+                                [
+                                    {
+                                        title: "Today",
+                                        items: grouped.today
+                                    },
+                                    {
+                                        title: "Yesterday",
+                                        items: grouped.yesterday
+                                    },
+                                    {
+                                        title: "Previous 7 Days",
+                                        items: grouped.previous7Days
+                                    },
+                                    {
+                                        title: "Older",
+                                        items: grouped.older
+                                    }
+                                ].map(section => (
 
-                    </div>
+                                    section.items.length > 0 && (
 
-                    <div className="space-y-2">
-                        {
-                            [
-                                {
-                                    title: "Today",
-                                    items: grouped.today
-                                },
-                                {
-                                    title: "Yesterday",
-                                    items: grouped.yesterday
-                                },
-                                {
-                                    title: "Previous 7 Days",
-                                    items: grouped.previous7Days
-                                },
-                                {
-                                    title: "Older",
-                                    items: grouped.older
-                                }
-                            ].map(section => (
+                                        <div key={section.title} className="mb-8">
+                                            <div className="mb-3">                                                
+                                                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+                                                    {section.title}
+                                                </span>                                                
+                                            </div>
 
-                                section.items.length > 0 && (
+                                            <div className="space-y-2">
+                                                {section.items.map(conv => (
 
-                                    <div key={section.title} className="mb-8">
-                                        <div className="mb-3">
-                                            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-                                                {section.title}
-                                            </span>
+                                                    <div
+                                                        key={conv.id}
+                                                        className={`relative group rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer
+                                                            ${
+                                                                conversationId === conv.id
+                                                                ? "bg-indigo-600 border-indigo-500 shadow-lg"
+                                                                : "bg-white/5 border-transparent hover:bg-white/10"
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center justify-between">
 
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            {section.items.map(conv => (
-
-                                                <div
-                                                    key={conv.id}
-                                                    className={`relative group rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer
-                                                        ${
-                                                            conversationId === conv.id
-                                                            ? "bg-indigo-600 border-indigo-500 shadow-lg"
-                                                            : "bg-white/5 border-transparent hover:bg-white/10"
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center justify-between">
-
-                                                        <div className="flex items-center gap-2 flex-1 truncate" onClick={() => openConversation(conv.id)}>
-                                                            <span className="truncate text-sm font-medium">
-                                                                {conv.title}
-                                                            </span>
+                                                            <div className="flex items-center gap-2 flex-1 truncate" onClick={() => openConversation(conv.id)}>
+                                                                {!collapsed ? (
+                                                                    <span className="truncate text-sm font-medium">
+                                                                        {conv.title}
+                                                                    </span>
+                                                                ) : (
+                                                                    <div className="w-3 h-3 rounded-full bg-indigo-400"></div>
+                                                                )}
+                                                            </div>
+                                                            
+                                                            {/* Three Dot Menu */}
+                                                            {!collapsed && (
+                                                                <button onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
+                                                                    }}
+                                                                    className={`cursor-pointer px-2 ${menuOpenId === conv.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                                                                        <EllipsisVerticalIcon className="w-5 h-5 text-slate-400 hover:text-white"/>
+                                                                </button>
+                                                            )}
                                                         </div>
+
+                                                        {/* Popup Menu */}
+                                                        {!collapsed && menuOpenId === conv.id && (
+                                                            <div ref={menuOpenId === conv.id ? menuRef : null} 
+                                                                className="absolute right-0 top-12 w-48 rounded-xl bg-white shadow-2xl overflow-hidden z-50">
+
+                                                                <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
+                                                                    onClick={() => {
+                                                                        setMenuOpenId(null);
+                                                                        renameConversation(conv.id, conv.title);
+                                                                    }}
+                                                                >
+                                                                    ✏️ Rename
+                                                                </button>
+                                                                
+                                                                <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
+                                                                    onClick={() => {
+                                                                        setMenuOpenId(null);
+                                                                        favoriteConversation(
+                                                                            conv.id,
+                                                                            !conv.is_favorite
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        conv.is_favorite
+                                                                        ? "⭐ Unpin"
+                                                                        : "⭐ Pin"
+                                                                    }
+                                                                </button>
+                                                                    
+                                                                {/* <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
+                                                                    onClick={() => {
+                                                                        setMenuOpenId(null);
+                                                                        setSelectedConversation(conv);
+                                                                        setShowExportModal(true);
+                                                                    }}
+                                                                >
+                                                                    📤 Export
+                                                                </button> */}
+            
+                                                                <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
+                                                                    onClick={() => {
+                                                                        setMenuOpenId(null);
+                                                                        shareConversation(conv.id);
+                                                                    }}
+                                                                >
+                                                                    🔗 Share
+                                                                </button>
+
+                                                                <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
+                                                                    onClick={() => {
+                                                                        setMenuOpenId(null);
+                                                                        archiveConversation(conv.id);
+                                                                    }}
+                                                                >
+                                                                    📦 Archive
+                                                                </button>
+
+                                                                <button className="cursor-pointer w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/20 transition"
+                                                                    onClick={() => {
+                                                                        setMenuOpenId(null);
+                                                                        setConversationToDelete(conv.id);
+                                                                        setDeleteModalOpen(true);
+                                                                    }}
+                                                                >
+                                                                    🗑 Delete
+                                                                </button>
+
+                                                            </div>
+                                                        )}
+
                                                         
-                                                        {/* Three Dot Menu */}
-                                                        <button onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setMenuOpenId(menuOpenId === conv.id ? null : conv.id );
-                                                            }}
-                                                            className={`cursor-pointer px-2 ${menuOpenId === conv.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                                                                <EllipsisVerticalIcon className="w-5 h-5 text-slate-400 hover:text-white"/>
-                                                        </button>
                                                     </div>
 
-                                                    {/* Popup Menu */}
-                                                    {menuOpenId === conv.id && (
-                                                        <div ref={menuOpenId === conv.id ? menuRef : null} 
-                                                            className="absolute right-0 top-12 w-48 rounded-xl bg-white shadow-2xl overflow-hidden z-50">
+                                                ))}
 
-                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
-                                                                onClick={() => {
-                                                                    setMenuOpenId(null);
-                                                                    renameConversation(conv.id, conv.title);
-                                                                }}
-                                                            >
-                                                                ✏️ Rename
-                                                            </button>
-                                                            
-                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
-                                                                onClick={() => {
-                                                                    setMenuOpenId(null);
-                                                                    favoriteConversation(
-                                                                        conv.id,
-                                                                        !conv.is_favorite
-                                                                    );
-                                                                }}
-                                                            >
-                                                                {
-                                                                    conv.is_favorite
-                                                                    ? "⭐ Unpin"
-                                                                    : "⭐ Pin"
-                                                                }
-                                                            </button>
-                                                                
-                                                            {/* <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
-                                                                onClick={() => {
-                                                                    setMenuOpenId(null);
-                                                                    setSelectedConversation(conv);
-                                                                    setShowExportModal(true);
-                                                                }}
-                                                            >
-                                                                📤 Export
-                                                            </button> */}
-        
-                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
-                                                                onClick={() => {
-                                                                    setMenuOpenId(null);
-                                                                    shareConversation(conv.id);
-                                                                }}
-                                                            >
-                                                                🔗 Share
-                                                            </button>
-
-                                                            <button className="cursor-pointer w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition text-sm"
-                                                                onClick={() => {
-                                                                    setMenuOpenId(null);
-                                                                    archiveConversation(conv.id);
-                                                                }}
-                                                            >
-                                                                📦 Archive
-                                                            </button>
-
-                                                            <button className="cursor-pointer w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/20 transition"
-                                                                onClick={() => {
-                                                                    setMenuOpenId(null);
-                                                                    setConversationToDelete(conv.id);
-                                                                    setDeleteModalOpen(true);
-                                                                }}
-                                                            >
-                                                                🗑 Delete
-                                                            </button>
-
-                                                        </div>
-                                                    )}
-
-                                                    
-                                                </div>
-
-                                            ))}
+                                            </div>
 
                                         </div>
 
-                                    </div>
+                                    )
 
-                                )
+                                ))
+                                }
 
-                            ))
-                            }
+                        </div>
+                    </>
+                    )}
 
-                    </div>
-                    
                     {/* Empty State */}
-                    {conversations.length === 0 && (
+                    {!collapsed && conversations.length === 0 && (
 
                         <div className="flex flex-col items-center justify-center py-16 text-center">
 
@@ -1029,56 +1059,44 @@ export default function Sidebar({ mode = "chat" }) {
                     "
                 >
 
-                    <div className="flex items-center gap-3">
+                    <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
 
                         <div
-                            className="
+                            className={`
                                 w-12
-                                h-12
-                                rounded-full
-                                bg-indigo-600
+                                h-12                                
                                 flex
                                 items-center
                                 justify-center
                                 text-lg
                                 font-bold
-                            "
+                                ${!collapsed ? "rounded-full bg-indigo-600" : "" }
+                            `}
                         >
                             {user?.email?.charAt(0).toUpperCase()}
                         </div>
 
-                        <div className="flex-1 min-w-0">
+                        {!collapsed && (
+                            <div className="flex-1 min-w-0">
 
-                            {/* <div className="font-semibold truncate">
-                                {user?.user_metadata?.full_name || "User"}
-                            </div> */}
+                                {/* <div className="font-semibold truncate">
+                                    {user?.user_metadata?.full_name || "User"}
+                                </div> */}
 
-                            <div className="text-sm text-gray-400 truncate">
-                                {user?.email}
+                                <div className="text-sm text-gray-400 truncate">
+                                    {user?.email}
+                                </div>
+
                             </div>
-
-                        </div>
-
+                        )}
                     </div>
 
-                    <button
+                    <button title="Logout"
                         onClick={logout}
-                        className="
-                            cursor-pointer
-                            mt-4
-                            w-full
-                            h-11
-                            rounded-xl
-                            border
-                            border-red-500/40
-                            text-red-300
-                            hover:bg-red-600
-                            hover:text-white
-                            transition
-                            duration-200
-                        "
-                    >
-                        Logout
+                        className={`cursor-pointer mt-4 w-full h-11 text-red-300 flex items-center justify-center transition duration-200
+                            ${!collapsed ? "rounded-xl border border-red-500/40 hover:bg-red-600 hover:text-white" : "" }
+                        `}
+                    ><span title="Logout" className="leading-none">🚪{collapsed ? "" : " Logout"}</span>
                     </button>
 
                 </div>
