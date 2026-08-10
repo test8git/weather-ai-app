@@ -8,6 +8,11 @@ import { useConversation } from "@/context/ConversationProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { useLoading } from "@/context/LoadingContext"
 
+//Profile related
+import ProfileMenu from "@/components/ProfileMenu";
+import ProfileModal from "@/components/profile/ProfileModal";
+
+
 import jsPDF from "jspdf";
 
 import { PlusIcon, EllipsisVerticalIcon, MagnifyingGlassIcon, ClockIcon } from "@heroicons/react/24/outline";
@@ -41,6 +46,8 @@ export default function Sidebar({ mode = "chat" }) {
     const [showExportModal, setShowExportModal] = useState(false);
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [exportType, setExportType] = useState("pdf");
+
+    const [profileOpen, setProfileOpen] = useState(false);
 
     const menuRef = useRef(null);
 
@@ -1049,57 +1056,9 @@ export default function Sidebar({ mode = "chat" }) {
             
             <div className="border-t border-white/10 p-5">
 
-                <div
-                    className="
-                        bg-white/5
-                        rounded-2xl
-                        p-4
-                        border
-                        border-white/10
-                    "
-                >
-
-                    <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
-
-                        <div
-                            className={`
-                                w-12
-                                h-12                                
-                                flex
-                                items-center
-                                justify-center
-                                text-lg
-                                font-bold
-                                ${!collapsed ? "rounded-full bg-indigo-600" : "" }
-                            `}
-                        >
-                            {user?.email?.charAt(0).toUpperCase()}
-                        </div>
-
-                        {!collapsed && (
-                            <div className="flex-1 min-w-0">
-
-                                {/* <div className="font-semibold truncate">
-                                    {user?.user_metadata?.full_name || "User"}
-                                </div> */}
-
-                                <div className="text-sm text-gray-400 truncate">
-                                    {user?.email}
-                                </div>
-
-                            </div>
-                        )}
-                    </div>
-
-                    <button title="Logout"
-                        onClick={logout}
-                        className={`cursor-pointer mt-4 w-full h-11 text-red-300 flex items-center justify-center transition duration-200
-                            ${!collapsed ? "rounded-xl border border-red-500/40 hover:bg-red-600 hover:text-white" : "" }
-                        `}
-                    ><span title="Logout" className="leading-none">🚪{collapsed ? "" : " Logout"}</span>
-                    </button>
-
-                </div>
+                <ProfileMenu collapsed={collapsed} onLogout={logout} onProfile={() => setProfileOpen(true)} />
+                
+                <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
 
             </div>
 

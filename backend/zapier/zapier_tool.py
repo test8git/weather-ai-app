@@ -1,12 +1,38 @@
 import json
+import re
 from asgiref.sync import async_to_sync
 from langchain_core.tools import StructuredTool
 from zapier.zapier_manager import get_zapier_manager
 from zapier.zapier_config import ZAPIER_APPS_CONFIG
 
+from common.request_context import (current_user_id, current_profile)
+
+def normalize_email(value):
+    if not value:
+        return value
+
+    value = value.strip()
+
+    # Markdown email link:
+    # [test8cs@gmail.com](mailto:test8cs@gmail.com)
+    match = re.search(
+        r'\[([^\]]+)\]\(mailto:([^)]+)\)',
+        value,
+        re.IGNORECASE
+    )
+
+    if match:
+        return match.group(2).strip()
+
+    # Plain mailto:
+    # mailto:test8cs@gmail.com
+    if value.lower().startswith("mailto:"):
+        return value[7:].strip()
+
+    return value
+
 # Singleton manager
 manager = get_zapier_manager()
-
 
 async def _zapier_action_async(app: str, operation: str, params: dict):
     """
@@ -141,7 +167,54 @@ async def _zapier_action_async(app: str, operation: str, params: dict):
         outputParam = f"""Return only the newest matching email with 
                         "subject, from, date and snippet." """
 
+    user_id = current_user_id.get()
+
+    profile = current_profile.get()
+
+    if not profile:
+        return "Profile not found."
+
+    mcp_url = profile.get("mcp_url")
+
+    if not mcp_url:
+        return "Please connect your Zapier MCP account first."
+
+
+    # Normalize Gmail email addresses before sending to Zapier
+    if app == "gmail" and operation in ("send_email", "create_draft", "reply_email",):
+        if isinstance(params.get("to"), str):
+            params["to"] = [params["to"]]
+
+        if isinstance(params.get("to"), list):
+            params["to"] = [
+                normalize_email(email)
+                for email in params["to"]
+            ]
+
+        if isinstance(params.get("cc"), str):
+            params["cc"] = [params["cc"]]
+
+        if isinstance(params.get("cc"), list):
+            params["cc"] = [
+                normalize_email(email)
+                for email in params["cc"]
+            ]
+
+        if isinstance(params.get("bcc"), str):
+            params["bcc"] = [params["bcc"]]
+
+        if isinstance(params.get("bcc"), list):
+            params["bcc"] = [
+                normalize_email(email)
+                for email in params["bcc"]
+            ]
+
+    print("NORMALIZED PARAMS:", params)
+
+
     result = await manager.execute(
+        user_id=user_id,
+        mcp_url=mcp_url,
         selected_api=ZAPIER_APPS_CONFIG[app]["selected_api"],
         action=cfg["action"],
         tool_name=cfg["tool_name"],
@@ -169,91 +242,26 @@ async def _zapier_action_async(app: str, operation: str, params: dict):
             if "followUpQuestion" in data:
                 return data
 
-            #
-            # Gmail Find Email
-            #
-            if operation == "read_email":
 
-                return {
+            if isinstance(data, dict) and data.get("results"):
+            # if data.get("execution", {}).get("status") == "SUCCESS":
+
+                result_data = {
                     "status": "SUCCESS",
-                    "action": "read_email",
-                    "data": data
+                    "app": app,
+                    "action": operation,
                 }
 
-            if data.get("execution", {}).get("status") == "SUCCESS":
+                if operation in ("send_email", "create_draft", "reply_email",):
+                    result_data["recipient"] = params.get("to")
 
-                if app == "gmail":
-
-                    result_data = {
-                        "status": "SUCCESS",
-                        "action": operation
-                    }
-
-                    #
-                    # send_email
-                    #
-                    if operation == "send_email":
-                        result_data["recipient"] = params.get("to")
-
-                    #
-                    # create_draft
-                    #
-                    elif operation == "create_draft":
-                        result_data["recipient"] = params.get("to")
-
-                    #
-                    # reply_email
-                    #
-                    elif operation == "reply_email":
-                        result_data["recipient"] = params.get("to")
-
-                    #
-                    # read_email
-                    #
-                    elif operation == "read_email":
-                        result_data["data"] = data
-
-                    return result_data
-
-                    # # # return {
-                    # # #     "status": "SUCCESS",
-                    # # #     "action": "send_email",
-                    # # #     "recipient": params.get("to")
-                    # # # }
-
-                elif app == "google_sheet":
-                    return {
-                        "status": "SUCCESS",
-                        "action": operation
-                    }
-
-                    # # # return {
-                    # # #     "status": "SUCCESS",
-                    # # #     "action": "append_row"
-                    # # # }
-
-                elif app == "google_docs":
-                    return {
-                        "status": "SUCCESS",
-                        "action": operation
-                    }
-                    
-                    # # # return {
-                    # # #     "status": "SUCCESS",
-                    # # #     "action": "update_document"
-                    # # # }
+                elif operation == "read_email":
+                    result_data["data"] = data
 
                 else:
-                    return {
-                        "status": "SUCCESS",
-                        "action": operation,
-                        "data": data
-                    }
+                    result_data["data"] = data
 
-                    # # # return {
-                    # # #     "status": "SUCCESS",
-                    # # #     "action": "action_completed"
-                    # # # }
+                return result_data
 
             else:
                 return f"❌ Zapier failed:\n{data.get('error')}"
@@ -275,7 +283,7 @@ def _zapier_action_sync(
     return async_to_sync(_zapier_action_async)(
         app,
         operation,
-        params,
+        params
     )
 
 
@@ -285,62 +293,209 @@ zapier_action = StructuredTool.from_function(
     name="zapier_action",
     description="""
     Use this tool whenever the user wants to interact with Gmail,
-    Google Sheets, Google Docs, or other connected Zapier services.
+Google Sheets, Google Docs, or other connected Zapier services.
 
-    IMPORTANT:
-    For Gmail operations, ALWAYS use app="gmail".
+IMPORTANT
 
-    Gmail operations:
+For ALL Gmail requests ALWAYS use:
 
-    1. read_email
-    Read/search Gmail messages.
+app="gmail"
 
-    Parameters:
-    - sender: sender name or email
-    - recipient: recipient name or email
-    - subject: subject/keyword
-    - unread: true/false
-    - attachment: true/false
-    - max_results: number of emails to return
+--------------------------------------------------
+READ EMAIL
+--------------------------------------------------
 
-    Examples:
+Use
 
-    Read latest email:
-    app="gmail"
-    operation="read_email"
-    params={"max_results": 1}
+operation="read_email"
 
-    Read latest email from Zapier:
-    app="gmail"
-    operation="read_email"
-    params={
-        "sender": "zapier",
-        "max_results": 1
-    }
+when the user wants to:
 
-    Read unread emails:
-    app="gmail"
-    operation="read_email"
-    params={
-        "unread": true
-    }
+- read email
+- check email
+- search email
+- latest email
+- newest email
+- recent email
+- unread email
+- inbox
+- find email
+- show emails
 
-    2. send_email
-    Send an email.
+Examples
 
-    3. create_draft
-    Create an email draft.
+User:
+Read my latest email
 
-    4. reply_email
-    Reply to an email.
+Tool:
 
-    Google Sheets:
-    - append_row
-    - update_row
+app="gmail"
+operation="read_email"
+params={
+    "max_results":1
+}
 
-    IMPORTANT:
-    If the user asks to read, search, find, check, or retrieve an email,
-    DO NOT answer from memory and DO NOT ask unnecessary clarification.
-    Call this tool immediately when sufficient information is present.
+----------------------------
+
+User:
+Read my latest email from Amazon
+
+Tool:
+
+app="gmail"
+operation="read_email"
+params={
+    "sender":"amazon",
+    "max_results":1
+}
+
+----------------------------
+
+User:
+Show unread emails
+
+Tool:
+
+app="gmail"
+operation="read_email"
+params={
+    "unread":true
+}
+
+--------------------------------------------------
+SEND EMAIL
+--------------------------------------------------
+
+Use
+
+operation="send_email"
+
+ONLY when the user wants the email to be SENT immediately.
+
+Examples:
+
+- send email
+- email this
+- mail this
+- send this report
+- send this weather report
+- send to john@example.com
+- email my manager
+- forward this report
+- send this message
+
+Examples
+
+User:
+Send this weather report to test@gmail.com
+
+Tool:
+
+app="gmail"
+operation="send_email"
+
+----------------------------
+
+User:
+Email this report to John
+
+Tool:
+
+app="gmail"
+operation="send_email"
+
+IMPORTANT
+
+If the user asks to SEND an email,
+NEVER use create_draft.
+
+--------------------------------------------------
+CREATE DRAFT
+--------------------------------------------------
+
+Use
+
+operation="create_draft"
+
+ONLY if the user explicitly asks for a draft.
+
+Examples:
+
+- create draft
+- save as draft
+- draft an email
+- prepare a draft
+- compose an email
+- don't send yet
+- write an email draft
+
+Example
+
+User:
+Create a draft for this report
+
+Tool:
+
+app="gmail"
+operation="create_draft"
+
+IMPORTANT
+
+Draft means DO NOT SEND.
+
+--------------------------------------------------
+REPLY EMAIL
+--------------------------------------------------
+
+Use
+
+operation="reply_email"
+
+ONLY when the user explicitly wants to reply to an existing email.
+
+Examples:
+
+- reply
+- reply to latest email
+- respond to this email
+
+--------------------------------------------------
+GOOGLE SHEETS
+--------------------------------------------------
+
+Use
+
+app="google_sheet"
+
+Operations:
+
+- append_row
+
+--------------------------------------------------
+VERY IMPORTANT
+--------------------------------------------------
+
+These operations are NEVER interchangeable.
+
+SEND
+    -> send_email
+
+DRAFT
+    -> create_draft
+
+READ
+    -> read_email
+
+REPLY
+    -> reply_email
+
+If the user asks to SEND an email,
+ALWAYS choose send_email.
+
+Never answer Gmail questions from memory.
+
+Never ask unnecessary clarification if enough information is already available.
+
+Call this tool immediately.
     """,
 )

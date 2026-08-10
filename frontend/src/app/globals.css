@@ -35,3 +35,24 @@ body {
   color: blue;
   font-size: 20px;
 }
+
+@keyframes zapierBlink {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: .45;
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-zapier {
+    animation: zapierBlink 1.3s infinite;
+}

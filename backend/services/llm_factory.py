@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-def get_llm(provider):
+def get_llm(provider, available_tools):
 
     provider = provider.lower()
 
@@ -80,9 +80,11 @@ def get_llm(provider):
         return ChatGroq(
             model=os.getenv("GROQ_AI_MODAL"),
             groq_api_key=os.getenv("GROQ_API_KEY"),
-            temperature=0.2,
+            temperature=0.0,
             streaming=True
         )
+
+        # return llm.bind_tools(available_tools)
 
     else:
         raise Exception("Unsupported AI provider")

@@ -16,33 +16,6 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(undefined);
     const [loading, setLoading] = useState(true);
 
-    // // // useEffect(() => {
-
-    // // //     const getUser = async () => {
-
-    // // //         const {data: { user }} = await supabase.auth.getUser();
-            
-    // // //         const {data: { session }} = await supabase.auth.getSession();
-
-    // // //         setUser(user ?? null);
-
-    // // //         setLoading(false);
-    // // //     };
-
-    // // //     getUser();
-
-    // // //     const {data: { subscription }} = supabase.auth.onAuthStateChange(
-    // // //                                                     (event, session) => {
-                                                            
-    // // //                                                         setUser(session?.user ?? null);
-
-    // // //                                                         setLoading(false);
-    // // //                                                     });
-
-    // // //     return () => subscription.unsubscribe();
-
-    // // // }, []);
-
     useEffect(() => {
 
         const loadSession = async () => {

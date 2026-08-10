@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLoading } from "@/context/LoadingContext"
-import { EnvelopeIcon, LockClosedIcon, UserIcon } from "@heroicons/react/24/outline";
+import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function SignupPage() {
 
@@ -14,6 +14,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const validatePassword = (password) => {
@@ -180,7 +183,7 @@ const singInOAuth = async(provider) =>
                 <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
 
                 <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -196,6 +199,13 @@ const singInOAuth = async(provider) =>
                         focus:border-indigo-500
                     "
                 />
+                <button
+                    type="button"
+                    onClick={()=>setShowPassword(!showPassword)}
+                    className="absolute right-4 top-4 text-sm cursor-pointer text-gray-300 hover:text-gray-500"
+                >
+                    {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                </button>
 
             </div>
 
@@ -206,7 +216,7 @@ const singInOAuth = async(provider) =>
                 <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
 
                 <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -222,6 +232,13 @@ const singInOAuth = async(provider) =>
                         focus:border-indigo-500
                     "
                 />
+                <button
+                    type="button"
+                    onClick={()=>setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-4 text-sm cursor-pointer text-gray-300 hover:text-gray-500"
+                >
+                    {showConfirmPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                </button>
 
             </div>
 

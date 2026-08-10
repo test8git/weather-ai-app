@@ -1,184 +1,190 @@
 import asyncio
-import os
-import json
-
-from dotenv import load_dotenv
-from pathlib import Path
+import time
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-# Load .env
-env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=env_path)
-
 
 class ZapierManager:
-    _instance = None
-    _lock = asyncio.Lock()
 
-    def __new__(cls):
+    def __init__(self):
 
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
+        self.connections = {}
 
-            cls._instance._initialized = False
-            cls._instance.client = None
-            cls._instance.tools = {}
+        self.lock = asyncio.Lock()
 
-        return cls._instance
+    ##########################################################
+    # Connect one user
+    ##########################################################
 
-    async def connect(self):
+    async def connect(self, user_id, mcp_url):
 
-        if self._initialized:
+        #
+        # Already connected?
+        #
+
+        if user_id in self.connections:
+
             return
 
-        async with self._lock:
+        async with self.lock:
 
-            if self._initialized:
+            if user_id in self.connections:
+
                 return
 
-            print("Connecting to Zapier MCP...")
+            print(f"Connecting MCP for {user_id}")
 
-            self.client = MultiServerMCPClient(
+            client = MultiServerMCPClient(
 
                 {
                     "zapier": {
                         "transport": "http",
-                        "url": os.getenv("ZAPIER_MCP_URL")
+                        "url": mcp_url
                     }
                 }
+
             )
 
-            tools = await self.client.get_tools()
+            tools = await client.get_tools()
 
-            self.tools = {
-                tool.name: tool
-                for tool in tools
+            # # # for tool in tools:
+
+            # # #     if tool.name == 'gmail_send_email':
+
+            # # #         print("\n==============================")
+            # # #         print("TOOL:", tool.name)
+            # # #         # print("DESCRIPTION:", tool.description)
+            # # #         print("ARGS:", tool.args)
+            # # #         # print("SCHEMA:", tool.args_schema)
+
+            self.connections[user_id] = {
+
+                "client": client,
+                "tools": {
+                    tool.name: tool
+                    for tool in tools
+                },
+                "connected_at": time.time()
             }
 
-            self._initialized = True
-
-            print(f"Zapier MCP Connected ({len(self.tools)} tools)")
-
-
-    # Reset Connection
-    def reset(self):
-        self.client = None
-        self.tools = {}
-        self._initialized = False
-
-    def get_tool(self, name):
-
-        if name not in self.tools:
-
-            raise ValueError(
-                f"Zapier tool '{name}' not found.\n"
-                f"Available tools:\n"
-                + "\n".join(sorted(self.tools.keys()))
+            print(
+                f"{user_id} connected ({len(tools)} tools)"
             )
 
-        return self.tools[name]
+    ##########################################################
+    # Disconnect
+    ##########################################################
 
-    async def _execute(self, selected_api, action, tool_name, params, instructions, output):
-        #
-        # New MCP servers expose the actual tool directly
-        #
+    def disconnect(self, user_id):
 
-        tool = self.get_tool(tool_name)
+        if user_id in self.connections:
 
-        # payload = {
-        #     "selected_api": selected_api,
-        #     "action": action,
-        #     "tool_name": tool_name,
-        #     "instructions": instructions,
-        #     "params": params,
-        #     "output": output,
-        # }
+            del self.connections[user_id]
 
-        payload = {
-            "selected_api": selected_api,
-            "action": action,
-            "tool_name": tool_name,
-            "instructions": instructions,
-            "output": output,
-        }
+    ##########################################################
+    # Get Tool
+    ##########################################################
 
-        if tool_name == "gmail_find_email":
-            payload["query"] = params
-        else:
-            payload["params"] = params
+    def get_tool(self, user_id, tool_name):
 
+        if user_id not in self.connections:
 
+            raise Exception(
+                "User not connected."
+            )
 
-        # print("PAYLOAD")
-        # print(json.dumps(payload, indent=2))
+        tools = self.connections[user_id]["tools"]
 
-        return await tool.ainvoke(payload)
+        if tool_name not in tools:
 
-        # # # tool = self.get_tool("gmail_find_email")
+            raise Exception(
 
-        # # # result = await tool.ainvoke(
-        # # # {
-        # # #     "instructions":"Find newest email.",
-        # # #     "query":"from:zapier in:inbox"
-        # # # })
+                f"{tool_name} not found.\n"
 
-        # print("TYPE")
-        # print(type(result))
-        # print("REPR")
-        # print(repr(result))
-        # print("RESPONSE")
-        # print(result)
+                + "\n".join(
+                    sorted(tools.keys())
+                )
 
+            )
 
-    async def execute(self, selected_api, action, tool_name, params, instructions="", output="Return success or failure."):
+        return tools[tool_name]
 
-        await self.connect()
+    ##########################################################
+    # Execute
+    ##########################################################
+
+    async def execute(
+        self,
+        user_id,
+        mcp_url,
+        selected_api,
+        action,
+        tool_name,
+        params,
+        instructions="",
+        output=""
+    ):
+
+        await self.connect(
+            user_id,
+            mcp_url
+        )
 
         try:
 
-            return await self._execute(
-                selected_api,
-                action,
-                tool_name,
-                params,
-                instructions,
-                output
-            )
+            tool = self.get_tool(user_id, tool_name)
 
-        except Exception as e:
+            # payload = {
+            #     "selected_api": selected_api,
+            #     "action": action,
+            #     "tool_name": tool_name,
+            #     "instructions": instructions,
+            #     "output": output
+            # }
 
-            msg = str(e).lower()
-            print(f"Zapier MCP Error: {e}")
+            # if tool_name == "gmail_find_email":
+            #     payload["query"] = params
+            # else:
+            #     payload["params"] = params
 
-            if any(x in msg for x in ("connection", "transport", "closed", "broken pipe", "reset by peer", "session", "timeout", "refused")):
+            payload = params.copy()
 
-                # Reconnect once
-                print("Attempting MCP reconnect...")
+            if tool_name == "gmail_find_email":
+                payload = {
+                    "query": params
+                }
 
-                self.reset()
-                await self.connect()
+            return await tool.ainvoke(payload)
 
-                try:
+        except Exception as ex:
 
-                    return await self._execute(
-                        selected_api,
-                        action,
-                        tool_name,
-                        params,
-                        instructions,
-                        output
-                    )
+            print(ex)
 
-                except Exception:
-                    raise
-            else:
-                print("ERROR IN ZAIPER MANAGER : ")
-                print(str(e))
+            print("Zapier execute error:", ex)
+
+            # IMPORTANT:
+            # Do not automatically retry Gmail write operations.
+            # The first request may already have succeeded.
+
+            if tool_name in [
+                "gmail_send_email",
+                "gmail_create_draft",
+                "gmail_reply_to_email",
+            ]:
                 raise
+
+            # Retry read/non-destructive operations only
+            self.disconnect(user_id)
+
+            await self.connect(user_id, mcp_url)
+
+            tool = self.get_tool(user_id, tool_name)
+
+            return await tool.ainvoke(payload)
 
 
 _manager = ZapierManager()
+
 
 def get_zapier_manager():
 

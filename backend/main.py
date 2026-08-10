@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from graph.agent_graph import run_agent_stream
 from services.transcribe_service import transcribe_audio
 from memory.history import load_chat_history
+from api.mcp import router as mcp_router
 
 
 # Earlier code...For send to Zaiper using Webhook
@@ -31,6 +32,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Include mcp router
+app.include_router(
+    mcp_router,
+    prefix="/api/mcp",
+    tags=["MCP"]
 )
 
 # # # def extract_text(chunk: str) -> str:
@@ -97,6 +105,7 @@ class ChatRequest(BaseModel):
     user_email: str
     selected_model: str
     conversation_id: str
+    user_message_id: str
 
 
 @app.get("/")
@@ -144,6 +153,7 @@ async def chat(
     user_email: str = Form(...),
     selected_model: str = Form(...),
     conversation_id: str = Form(...),
+    user_message_id: str | None = Form(None),
     file: UploadFile | None = File(None)
 ):
 
@@ -171,7 +181,7 @@ async def chat(
             f.write(await file.read())
 
     # Load Conversation history from DB
-    history = load_chat_history(conversation_id)
+    history = load_chat_history(conversation_id, exclude_message_id=user_message_id)
 
     async def generate():
         answer = ""
@@ -213,5 +223,10 @@ async def chat(
 
     return StreamingResponse(
         generate(),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )

@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@zapier/zapier-sdk": "^0.94.1"
+  },
+  "devDependencies": {
+    "@zapier/zapier-sdk-cli": "^0.71.1"
+  }
+}

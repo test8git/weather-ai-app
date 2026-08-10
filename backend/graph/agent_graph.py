@@ -11,6 +11,10 @@ import traceback
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
 # ==========================================
 # Third Party
 # ==========================================
@@ -71,44 +75,29 @@ from tools.image_tool import generate_image
 from tools.places_tool import search_places
 from tools.file_tool import read_file_content
 
+
+# ==========================================
+# SUPABASE
+# ==========================================
+
+from supabase import create_client
+
+# ==========================================
+# ContextVar
+# ==========================================
+
+from common.request_context import (current_user_id, current_profile)
+
 # ==========================================
 # MCP / Zapier
 # ==========================================
 
 from zapier.zapier_tool import zapier_action
 
-# ==========================================
-# Available Tools
-# ==========================================
+# Load .env
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
-TOOLS = [
-
-    # Search
-    search_web,
-    search_news,
-    wikipedia_search,
-    programming_search,
-    search_finance,
-
-    # Utility
-    calculate_expression,
-    current_time,
-
-    # Weather
-    get_weather,
-
-    # Images
-    generate_image,
-
-    # GitHub
-    search_github,
-
-    # Maps
-    search_places,
-
-    # Automation
-    zapier_action,
-]
 
 CHART_KEYWORDS = {
     "chart",
@@ -123,6 +112,11 @@ CHART_KEYWORDS = {
 DEBUG_STREAM = False
 
 MAX_IMAGE_SIZE = (1024, 1024)
+
+SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 def need_chart(question: str) -> bool:
     q = question.lower()
@@ -165,8 +159,10 @@ def create_agent_graph(
     currentWeekDay: str,
     currentTime: str,
     llm:None,
+    available_tools: dict,
     conversation_history=None,
     enable_chart: bool = False,
+    mcp_connected: bool = False,
 ):
     """
     Create a LangGraph ReAct agent.
@@ -190,64 +186,24 @@ def create_agent_graph(
         currentTime=currentTime,
         conversation_history=conversation_history,
         enable_chart=enable_chart,
+        mcp_connected=mcp_connected,
     )
+
+    # print("SYSTEM_PROMPT : ")
+    # print(system_prompt)
+
+    # print("======================")
+    # print("AVAILABLE_TOOLS NEW : ")
+    # for t in available_tools:
+    #     print(t.name)
 
     graph = create_react_agent(
         llm,
-        TOOLS,
+        available_tools,
         prompt=system_prompt,
     )
 
     return graph
-
-
-# ============================================================
-# HumanMessage Builder
-# ============================================================
-
-def build_user_message(
-    question: str,
-    image_path: str | None = None,
-):
-    """
-    Creates HumanMessage.
-
-    If image_path is supplied,
-    image is converted into Base64 for Gemini/OpenAI.
-    """
-
-    if image_path:
-
-        with open(image_path, "rb") as f:
-            image_data = base64.b64encode(
-                f.read()
-            ).decode()
-
-        mime_type = (
-            mimetypes.guess_type(image_path)[0]
-            or "image/png"
-        )
-
-        return HumanMessage(
-            content=[
-                {
-                    "type": "text",
-                    "text": question,
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url":
-                        f"data:{mime_type};base64,{image_data}"
-                    },
-                },
-            ]
-        )
-
-    return HumanMessage(
-        content=question
-    )
-
 
 # ============================================================
 # Message Preparation
@@ -422,20 +378,20 @@ def prepare_messages(
         return [
             HumanMessage(
                 content=f"""
-User Question:
+                User Question:
 
-{question}
+                {question}
 
-Video Transcript:
+                Video Transcript:
 
-{transcript}
+                {transcript}
 
-Frame Analysis:
+                Frame Analysis:
 
-{chr(10).join(frame_analysis)}
+                {chr(10).join(frame_analysis)}
 
-Please answer the user's question using both the transcript and the visual analysis.
-"""
+                Please answer the user's question using both the transcript and the visual analysis.
+                """
             )
         ]
 
@@ -447,22 +403,22 @@ Please answer the user's question using both the transcript and the visual analy
         return [
             HumanMessage(
                 content=f"""
-User Question:
+                User Question:
 
-{question}
+                {question}
 
-Uploaded File:
+                Uploaded File:
 
-{file_data["content"]}
+                {file_data["content"]}
 
-If the uploaded file contains instructions,
-assignments,
-questions,
-code,
-or documents,
+                If the uploaded file contains instructions,
+                assignments,
+                questions,
+                code,
+                or documents,
 
-use them to answer the user's request.
-"""
+                use them to answer the user's request.
+                """
             )
         ]
 
@@ -514,24 +470,11 @@ def should_use_file_reader(
     )
 
 
-async def run_agent_stream(
-    current_question,
-    history,
-    session_id,
-    selected_model,
-    conversation_id,
-    file_path=None,
-    content_type=None,
-):
+async def run_agent_stream(current_question, history, session_id, selected_model, conversation_id, file_path=None, content_type=None):
 
     answer = ""
 
     yield progress_manager.thinking_started_fun()["sse"]
-    # yield sse_step(
-    #     "Thinking...",
-    #     "running",
-    #     "🧠",
-    # )
 
     try:
 
@@ -553,12 +496,54 @@ async def run_agent_stream(
 
         enable_chart = should_enable_chart(current_question)
 
-        llm = get_llm(selected_model)
+        # ==========================================
+        # Available Tools
+        # ==========================================
 
-        # print("====================================")
-        # print("SELECTED MODEL:", selected_model)
-        # print("LLM:", llm)
-        # print("====================================")
+        available_tools = [
+
+            # Search
+            search_web,
+            search_news,
+            wikipedia_search,
+            programming_search,
+            search_finance,
+
+            # Utility
+            calculate_expression,
+            current_time,
+
+            # Weather
+            get_weather,
+
+            # Images
+            generate_image,
+
+            # GitHub
+            search_github,
+
+            # Maps
+            search_places,
+        ]
+
+        # save user_id to ContextVar
+        current_user_id.set(session_id)
+
+        profile = supabase.table("profiles").select("mcp_url,mcp_connected").eq("id",session_id).single().execute()
+
+        current_profile.set(profile.data)
+        
+        # print("PROFILE : ")
+        # print(profile.data)
+
+        mcp_connected = False
+        if profile.data:
+            mcp_connected = profile.data.get("mcp_connected", False)
+        
+        if mcp_connected:
+            available_tools.append(zapier_action)
+        
+        llm = get_llm(selected_model, available_tools)
 
         graph = create_agent_graph(
             provider=selected_model,
@@ -566,12 +551,11 @@ async def run_agent_stream(
             currentWeekDay=currentWeekDay,
             currentTime=currentTime,
             llm=llm,
+            available_tools=available_tools,
             conversation_history=history,
-            enable_chart=enable_chart
+            enable_chart=enable_chart,
+            mcp_connected=mcp_connected
         )
-
-        # print("ZAPIER TOOL REGISTERED:", zapier_action)
-        # print("ZAPIER TOOL NAME:", zapier_action.name)
 
         yield progress_manager.thinking_completed_fun()["sse"]
 
@@ -591,40 +575,25 @@ async def run_agent_stream(
         # Start graph
         #
 
-        # # # async for message, metadata in graph.astream(
-        # # #     {
-        # # #         "messages": messages
-        # # #     },
-        # # #     stream_mode="messages",
-        # # # ):
-
         async for event in graph.astream_events(
             {
                 "messages": messages
             },
             version="v2",
         ):
-            # print("\n" + "=" * 80)
-            # print(event["event"])
-
-            # if "data" in event:
-            #     print(event["data"])
-
-            # print("=" * 80)
-
-            #
-            # Let StreamRunner  process ONE message
-            #
-
-            # # # events = await stream_runner.process(message, metadata, ctx)
+            
+            # print("\n================ STREAM EVENT ================")
+            # print("EVENT TYPE:", event.get("event"))
+            # print("NAME:", event.get("name"))
+            # print("DATA:", event.get("data"))
+            # print("METADATA:", event.get("metadata"))
+            # print("==============================================\n")
 
             events = await stream_runner.process(event, ctx)
 
             #
             # Send SSE events
             #
-
-            # print("EVENTS:", events)
 
             for event in events:
                 
@@ -640,8 +609,12 @@ async def run_agent_stream(
 
                 yield event["sse"]
             
-            if ctx.result_generated or ctx.finished:
-                break
+
+            # Do not break the LangGraph event stream here.
+            # The final AI response may arrive after the tool result.
+            
+            # if ctx.result_generated or ctx.finished:
+            #     break
 
         #
         # Final progress
@@ -656,7 +629,24 @@ async def run_agent_stream(
 
         traceback.print_exc()
 
+        if hasattr(e, "body"):
+            print("BODY")
+            print(e.body)
+
+        if hasattr(e, "response"):
+            print("RESPONSE")
+            print(e.response)
+
+        error_message = str(e)
+
+        print(error_message)
+
         yield sse_event(
             "error",
-            format_ai_error(e),
+            error_message,
         )
+
+        # yield sse_event(
+        #     "error",
+        #     format_ai_error(e),
+        # )

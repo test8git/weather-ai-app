@@ -89,14 +89,18 @@ def clean_text(text: str) -> str:
 
     return text.strip()
 
-#@tool(description="Get current weather for a city")
-@tool(description="Get Current weather Feels like Wind Humidity Pressure Visibility Sunrise Sunset for a city")
-def get_weather(city: str):
+@tool(description="""
+    Get the current weather for a city or location.
+
+    Use this tool when the user asks about current weather,
+    temperature, humidity, or weather conditions.
+    """)
+def get_weather(location: str):
 
     try:
         WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
-        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={WEATHER_API_KEY}&units=metric"
 
         response = requests.get(url, timeout=20)
 
@@ -107,13 +111,13 @@ def get_weather(city: str):
             error_message = data.get("message", "Unknown error")
 
             return f"""
-                Unable to get weather for '{city}'.
+                Unable to get weather for '{location}'.
 
                 Error:
                 {error_message}
                 """
         return f"""
-        City: {city}
+        Location: {location}
         Temperature: {data['main']['temp']}°C
         Weather: {data['weather'][0]['description']}
         Humidity: {data['main']['humidity']}%

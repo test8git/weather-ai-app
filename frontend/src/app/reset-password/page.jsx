@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLoading } from "@/context/LoadingContext"
-import { LockClosedIcon } from "@heroicons/react/24/outline";
+import { LockClosedIcon, EyeIcon, EyeSlashIcon  } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
 export default function ResetPasswordPage() {
@@ -14,6 +14,9 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const { setGlobalLoading } = useLoading();
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const router = useRouter();
   
@@ -107,7 +110,7 @@ export default function ResetPasswordPage() {
                 <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
 
                 <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="New Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -123,6 +126,13 @@ export default function ResetPasswordPage() {
                         focus:border-indigo-500
                     "
                 />
+                <button
+                    type="button"
+                    onClick={()=>setShowPassword(!showPassword)}
+                    className="absolute right-4 top-4 text-sm cursor-pointer text-gray-300 hover:text-gray-500"
+                >
+                    {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                </button>
 
             </div>
 
@@ -133,7 +143,7 @@ export default function ResetPasswordPage() {
                 <LockClosedIcon className="w-5 h-5 absolute left-4 top-4 text-gray-400" />
 
                 <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -149,6 +159,13 @@ export default function ResetPasswordPage() {
                         focus:border-indigo-500
                     "
                 />
+                <button
+                    type="button"
+                    onClick={()=>setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-4 text-sm cursor-pointer text-gray-300 hover:text-gray-500"
+                >
+                    {showConfirmPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                </button>
 
             </div>
 

@@ -5,13 +5,14 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLoading } from "@/context/LoadingContext"
-import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function LoginPage() {
   const { setGlobalLoading } = useLoading();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   
   const emailRef = useRef(null);
@@ -219,31 +220,40 @@ const singInOAuth = async(provider) =>
                     className="absolute left-4 top-4 w-5 h-5 text-gray-400"
                 />
 
-                <input
-                    ref={passwordRef}
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            login();
-                        }
-                    }}
-                    placeholder="Password"
-                    className="
-                        w-full
-                        h-14
-                        rounded-xl
-                        border
-                        border-gray-300
-                        pl-12
-                        pr-4
-                        outline-none
-                        focus:border-indigo-500
-                        focus:ring-2
-                        focus:ring-indigo-200
-                    "
-                />
+                
+                    <input
+                        ref={passwordRef}
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                login();
+                            }
+                        }}
+                        placeholder="Password"
+                        className="
+                            w-full
+                            h-14
+                            rounded-xl
+                            border
+                            border-gray-300
+                            pl-12
+                            pr-4
+                            outline-none
+                            focus:border-indigo-500
+                            focus:ring-2
+                            focus:ring-indigo-200
+                        "
+                    />
+                    <button
+                        type="button"
+                        onClick={()=>setShowPassword(!showPassword)}
+                        className="absolute right-4 top-4 text-sm cursor-pointer text-gray-300 hover:text-gray-500"
+                    >
+                        {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                    </button>
+                
 
             </div>
 

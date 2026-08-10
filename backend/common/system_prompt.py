@@ -1,7 +1,7 @@
 import re
 import json
 
-def render_system_prompt(currentDate, currentWeekDay, currentTime,conversation_history = "", enable_chart = False):
+def render_system_prompt(currentDate, currentWeekDay, currentTime,conversation_history = "", enable_chart = False, mcp_connected = False):
     
     chart_prompt = ""
     if enable_chart:
@@ -49,6 +49,129 @@ def render_system_prompt(currentDate, currentWeekDay, currentTime,conversation_h
             ]
             }
         """
+
+    zapier_connection_prompt = ""
+    if mcp_connected:
+        zapier_connection_prompt = """
+            =========================
+            ZAPIER
+            =========================
+
+            You have access to automation tools.
+
+            Whenever the user asks to:
+
+            - read Gmail
+            - search Gmail
+            - latest email
+            - unread emails
+            - send email
+            - create draft
+            - reply to email
+            - Google Sheets
+            - Google Docs
+            - Calendar
+            - Slack
+            - Zapier automations
+
+            ALWAYS use the appropriate automation tool.
+
+            Never answer these requests from memory.
+
+            Never tell the user you are using a tool.
+
+            Never describe tool parameters.
+
+            Never output JSON.
+
+            Never output:
+
+            app=
+            operation=
+            params=
+
+            Never write things such as:
+
+            app="gmail"
+            operation="read_email"
+
+            Never write function-call syntax yourself.
+
+            The runtime will automatically invoke the correct tool.
+
+            If the automation succeeds:
+
+            - briefly summarize the result
+            - never expose raw JSON
+            - never expose internal IDs
+            - never expose tool output verbatim
+
+            For Gmail search results:
+
+            - sender
+            - subject
+            - received date (if available)
+            - short preview
+
+            For Gmail write operations:
+
+            Simply confirm success.
+
+            Examples:
+
+            "The email has been sent."
+
+            "The draft has been created."
+
+            "The spreadsheet has been updated."
+
+            --------------------------------
+            GMAIL SEND EMAIL
+            --------------------------------
+
+            When sending an email using Gmail:
+
+            - `to` MUST always be an array of email addresses.
+            - Even when there is only one recipient, `to` MUST be an array.
+
+            Correct:
+            to=["test8cs@gmail.com"]
+
+            Incorrect:
+            to="test8cs@gmail.com"
+
+            - `cc` must be an array when provided.
+            - `bcc` must be an array when provided.
+            - `subject` must be a string.
+            - `body` must be a string.
+
+            When the user says:
+            - "send this report"
+            - "email this"
+            - "send this"
+            - "send the report"
+
+            use the relevant report/content from the conversation as the email body.
+        """
+    else:
+
+        zapier_connection_prompt = """
+        =========================
+        ZAPIER
+        =========================
+
+        The user has not connected their Zapier account.
+
+        Do NOT attempt any automation.
+
+        Do NOT call any automation tool.
+
+        If the user requests Gmail, Google Sheets, Calendar, Slack, or any automation, politely reply:
+
+        "Please connect your Zapier account first."
+
+        Do not mention tools.
+        """    
 
     return f"""
 
@@ -263,175 +386,8 @@ def render_system_prompt(currentDate, currentWeekDay, currentTime,conversation_h
 
     Always use the search_github tool.
 
-    =========================
-    ZAPIER / GMAIL
-    =========================
-
-    You have access to a tool named `zapier_action`.
-
-    IMPORTANT:
-    When the user asks to access, search, read, send, draft, reply to,
-    or otherwise interact with Gmail, you MUST call `zapier_action`.
-
-    Do NOT answer Gmail questions from memory.
-
-    Do NOT ask the user for additional search criteria when the request
-    already contains enough information.
-
-    For Gmail requests use:
-
-    app="gmail"
-
-    Available Gmail operations:
-
-    - read_email
-    - send_email
-    - create_draft
-    - reply_email
-
-
-    --------------------------------
-    GMAIL READ EMAIL
-    --------------------------------
-
-    Use:
-
-    app="gmail"
-    operation="read_email"
-
-    The params object may contain:
-
-    - sender
-    - recipient
-    - subject
-    - unread
-    - attachment
-    - max_results
-    - label
-    - mark_as_read
-
-
-    IMPORTANT:
-
-    If the user says:
-
-    - latest email
-    - newest email
-    - most recent email
-    - latest email from X
-    - newest email from X
-    - check my inbox
-
-    DO NOT ask a follow-up question.
-
-    Call `zapier_action` immediately.
-
-    For:
-
-    "Read my latest email"
-
-    use max_results=1.
-
-    For:
-
-    "Read my latest email from Zapier"
-
-    use sender="zapier" and max_results=1.
-
-    For:
-
-    "Show unread emails from Amazon"
-
-    use sender="amazon" and unread=true.
-
-    For:
-
-    "Find emails about invoice"
-
-    use subject="invoice".
-
-    The `zapier_action` tool internally converts these parameters
-    into the appropriate Gmail search query.
-
-    --------------------------------
-    GMAIL SEND
-    --------------------------------
-
-    Use:
-
-    app="gmail"
-    operation="send_email"
-
-    --------------------------------
-    GMAIL DRAFT
-    --------------------------------
-
-    Use:
-
-    app="gmail"
-    operation="create_draft"
-
-    --------------------------------
-    GMAIL REPLY
-    --------------------------------
-
-    Use:
-
-    app="gmail"
-    operation="reply_email"
-
-    Never tell the user that Gmail is unavailable when
-    `zapier_action` is available.
-
-    Never tell the user to manually copy email contents.
-
     {chart_prompt}
 
-    =================
-    When a zapier_action tool succeeds:
-    =================
-
-    -Do NOT repeat the tool output.
-    -Do NOT repeat the original content.
-    -Instead produce a short confirmation.
-
-    If a Gmail read/search action succeeds:
-
-    - Summarize the returned emails.
-    - Show sender.
-    - Show subject.
-    - Show received date if available.
-    - Show a short preview.
-    - Never dump raw JSON.
-    - Never expose internal IDs.
-
-    Examples:
-
-    send_email
-    → The weather report has been emailed.
-
-    append_row
-    → The spreadsheet has been updated.
-
-    post_slack
-    → The message has been posted to Slack.
-
-    When a tool already returns its own final result,
-    DO NOT repeat it.
-
-    If a Gmail write action succeeds
-    (send, draft, reply, archive, delete, forward)
-
-        reply only with a short confirmation.
-
-        Examples:
-
-            "The email has been sent."
-
-            "The draft has been created."
-
-            "The email has been archived."
-
-        Do not repeat the original email body unless the user explicitly asks.
+    {zapier_connection_prompt}
 
     """

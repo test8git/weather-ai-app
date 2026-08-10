@@ -3,9 +3,9 @@ from langchain_core.messages import AIMessage
 from memory.conversation_store import ConversationStore
 
 
-def load_chat_history(conversation_id):
+def load_chat_history(conversation_id, exclude_message_id=None):
 
-    rows = ConversationStore.load_messages(conversation_id)
+    rows = ConversationStore.load_messages(conversation_id,exclude_message_id)
 
     history = []
 

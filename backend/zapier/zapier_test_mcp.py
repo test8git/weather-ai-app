@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from zapier_config import ZAPIER_APPS_CONFIG
+from zapier.zapier_config import ZAPIER_APPS_CONFIG
 
 # Load .env
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -28,10 +28,13 @@ async def main():
 
     # print("\n===== AVAILABLE TOOLS =====")
 
-    # for tool in tools:
-    #     print("=" * 60)
-    #     print("Name :", tool.name)
-    #     print("Description :", tool.description)
+
+
+    for tool in tools:
+        if tool.name.startswith("google_sheets_"):
+            print("Name :", tool.name)
+            print("Description :", tool.description)
+            print("ARGS:", tool.args)
 
     # STEP 1 : Display zaiper actions
     # # # tool = next(
@@ -108,9 +111,9 @@ async def main():
 #     print(tool)
 
 
-    tool = next(t for t in tools if t.name == "gmail_find_email")
+    # tool = next(t for t in tools if t.name == "gmail_find_email")
 
-    print(tool)
+    # print(tool)
 
 
 asyncio.run(main())

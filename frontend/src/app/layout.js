@@ -1,10 +1,12 @@
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/context/AuthProvider";
+import { UserProvider } from "@/context/UserProvider";
 import { LoadingProvider } from "@/context/LoadingContext"
 import GlobalLoader from "@/components/GlobalLoader"
 import { Geist, Geist_Mono } from "next/font/google";
 import { ConversationProvider} from "@/context/ConversationProvider";
 import "./globals.css";
+import "../styles/chat.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,12 +32,14 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <ConversationProvider>
-            <LoadingProvider>
-              <GlobalLoader />
-              {children}              
-            </LoadingProvider>
-          </ConversationProvider>
+          <UserProvider>
+            <ConversationProvider>
+              <LoadingProvider>
+                <GlobalLoader />
+                {children}              
+              </LoadingProvider>
+            </ConversationProvider>
+          </UserProvider>
         </AuthProvider>
         <Toaster position="bottom-right" reverseOrder={false} 
                  toastOptions={{
