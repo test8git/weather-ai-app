@@ -114,7 +114,7 @@ export default function Sidebar({ mode = "chat" }) {
 
             if (error)
             {
-                console.error(error);
+                console.log(error);
                 return;
             }
 
@@ -158,7 +158,7 @@ export default function Sidebar({ mode = "chat" }) {
 
             if (error)
             {
-                console.error(error);
+                console.log(error);
 
                 return;
             }
@@ -204,7 +204,7 @@ export default function Sidebar({ mode = "chat" }) {
 
             if (error)
             {
-                console.error(error);
+                console.log(error);
                 return;
             }
 
@@ -232,7 +232,7 @@ export default function Sidebar({ mode = "chat" }) {
 
             if (error)
             {
-                console.error(error);
+                console.log(error);
                 return;
             }
 
@@ -409,7 +409,7 @@ export default function Sidebar({ mode = "chat" }) {
                     .eq("id", id);
 
             if (error) {
-                console.error(error);
+                console.log(error);
                 return;
             }
 
@@ -437,6 +437,7 @@ export default function Sidebar({ mode = "chat" }) {
     };
 
     const logout = async () => {
+        setConversationId(null);
         setGlobalLoading(true);
         await supabase.auth.signOut();
         setGlobalLoading(false);
@@ -526,7 +527,7 @@ export default function Sidebar({ mode = "chat" }) {
                     .single();
 
             if (error) {
-                console.error(error);
+                console.log(error);
                 return;
             }
 

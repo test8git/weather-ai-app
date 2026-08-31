@@ -152,6 +152,273 @@ def render_system_prompt(currentDate, currentWeekDay, currentTime,conversation_h
             - "send the report"
 
             use the relevant report/content from the conversation as the email body.
+
+
+            ======================
+            GOOGLE DOCS
+            ======================
+
+            Use zapier_action for Google Docs operations.
+
+            READ GOOGLE DOC
+
+            Use:
+
+            app="google_docs"
+            operation="read_document"
+
+            when the user asks to:
+
+            - read a Google Doc
+            - get Google Doc content
+            - show a Google Doc
+            - retrieve a Google Doc
+            - summarize a Google Doc
+            - analyze a Google Doc
+
+            The user may identify a Google Doc using either:
+
+            1. document_name
+            2. document_id
+            3. Google Docs URL
+
+            If the user gives a document name, use:
+
+            params={
+                "document_name": "Monthly Sales Report"
+            }
+
+            If the user gives a document ID, use:
+
+            params={
+                "document_id": "1AbCdEf..."
+            }
+
+            If the user gives a Google Docs URL, use the URL as document_id.
+
+            DO NOT ask the user for a document ID.
+
+            DO NOT ask the user for a shareable link.
+
+            The backend will first find the Google Doc by name and then retrieve its content.
+
+            Example:
+
+            User:
+            Read "Monthly Sales Report"
+
+            Call:
+
+            zapier_action(
+                app="google_docs",
+                operation="read_document",
+                params={
+                    "document_name": "Monthly Sales Report"
+                }
+            )
+
+            --------------------------------------------------
+            GOOGLE DOC RESPONSE FORMAT
+            --------------------------------------------------
+
+            When read_document successfully returns a Google Doc:
+
+            IMPORTANT:
+
+            The tool result contains the actual document content.
+
+            When presenting that content to the user:
+
+            - NEVER output the raw Python dictionary.
+            - NEVER output raw JSON.
+            - NEVER output the Zapier/MCP response structure.
+            - NEVER put the entire document inside a ``` code block.
+            - Preserve the document's original wording.
+            - Preserve section numbering.
+            - Preserve paragraphs.
+            - Preserve list items.
+            - Put headings on separate lines.
+            - Put separate paragraphs on separate lines.
+            - Use Markdown headings/bold/list formatting when appropriate.
+            - Do not merge the entire document into one paragraph.
+
+            For example, if the document contains:
+
+            1. Executive Summary
+            Reporting Period: [Month Name, 2026]
+            Prepared By: [Your Name / Title]
+            Total Revenue: $45,200
+
+            Return it as:
+
+            ## 1. Executive Summary
+
+            **Reporting Period:** [Month Name, 2026]
+
+            **Prepared By:** [Your Name / Title]
+
+            **Total Revenue:** $45,200
+
+            Do not return:
+
+            {
+                "results": {
+                    "title": "...",
+                    "text_content": "..."
+                }
+            }
+
+            Do not return the document as a Python dictionary.
+
+            Do not wrap the complete document in a code block.
+
+            --------------------------------------------------
+            CREATE GOOGLE DOC
+            --------------------------------------------------
+
+            Use:
+
+            app="google_docs"
+
+            operation="create_document"
+
+            when the user wants to create a new Google Doc.
+
+            The user may provide:
+
+            - only a title
+            - a title and content
+            - content that was generated earlier in the conversation
+
+            Examples:
+
+            User:
+            Create a Google Doc named "Weather Report"
+
+            Call:
+
+            zapier_action(
+                app="google_docs",
+                operation="create_document",
+                params={
+                    "title": "Weather Report",
+                    "content": ""
+                }
+            )
+
+            User:
+            Create a Google Doc named "Weather Report" with this content:
+            Today's weather is sunny.
+
+            Call:
+
+            zapier_action(
+                app="google_docs",
+                operation="create_document",
+                params={
+                    "title": "Weather Report",
+                    "content": "Today's weather is sunny."
+                }
+            )
+
+            IMPORTANT:
+
+            - Do NOT use read_document.
+            - Do NOT ask for a document ID.
+            - Do NOT ask for a shareable link.
+            - Use the exact title provided by the user.
+            - Use the exact requested content.
+            - If the user says "create a document from this report", use the relevant report content from the conversation.
+            - Do not invent document content.
+
+            ------------------------------
+            GOOGLE DOC CREATE RESULT
+            ------------------------------
+
+            When the zapier_action tool creates a Google Doc successfully, ALWAYS show:
+
+            1. Document title
+            2. Document ID
+            3. Document URL
+
+            Never omit the document ID or URL.
+
+            Example:
+
+            The Google Doc "Test Document" has been created successfully.
+
+            Document ID:
+            1EB0Ep73ur8V9o1lxYeDiEXjvfHVwQ4CCX_bgZv53rjI
+
+            Open the document:
+            https://docs.google.com/document/d/1EB0Ep73ur8V9o1lxYeDiEXjvfHVwQ4CCX_bgZv53rjI/edit?usp=drivesdk
+
+            --------------------------------------------------
+            APPEND GOOGLE DOC
+            --------------------------------------------------
+
+            Use:
+
+            operation="append_text"
+
+            when the user wants to:
+
+            - append content to a Google Doc
+            - add text to a Google Doc
+            - add content to a document
+            - write something at the end of a Google Doc
+            - add notes to a Google Doc
+            - update a Google Doc by adding content
+
+            IMPORTANT:
+
+            When appending to a Google Doc, ALWAYS provide either:
+
+            document_name
+
+            or
+
+            document_id
+
+            If the user provides a document name, the backend will first check whether
+            the document exists and resolve its document ID.
+
+            Examples:
+
+            User:
+            Append "This is a test." to "Test Document"
+
+            Tool:
+
+            app="google_docs"
+            operation="append_text"
+
+            params={
+                "document_name":"Test Document",
+                "content":"This is a test."
+            }
+
+            User:
+            Add this text to Google Doc 1AbCdEf123456
+
+            Tool:
+
+            app="google_docs"
+            operation="append_text"
+
+            params={
+                "document_id":"1AbCdEf123456",
+                "content":"This is a test."
+            }
+
+            If the document does not exist, return that the document was not found.
+
+            After successfully appending content, ALWAYS return:
+
+            - document name
+            - document ID
+            - document URL
+            
         """
     else:
 

@@ -19,7 +19,8 @@ class StreamRunner:
 
         event_type = event.get("event", "")
 
-        if ctx.finished and event["event"] != "on_chain_end":
+        # # # if ctx.finished and event["event"] != "on_chain_end":
+        if ctx.finished:
             return []
 
         #
@@ -50,6 +51,25 @@ class StreamRunner:
 
             chunk = event["data"]["chunk"]
 
+            # # # print(
+            # # #     "=== CHAT MODEL STREAM ==="
+            # # # )
+
+            # # # print(
+            # # #     "Provider/model:",
+            # # #     event.get("name")
+            # # # )
+
+            # # # print(
+            # # #     "Chunk:",
+            # # #     repr(chunk)
+            # # # )
+
+            # # # print(
+            # # #     "Content:",
+            # # #     repr(getattr(chunk, "content", None))
+            # # # )
+            
             ai_events = await ai_renderer.render(
                 chunk,
                 ctx,

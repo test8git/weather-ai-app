@@ -86,7 +86,7 @@ from supabase import create_client
 # ContextVar
 # ==========================================
 
-from common.request_context import (current_user_id, current_profile)
+from common.request_context import (current_user_id, current_profile, current_selected_ai_modal)
 
 # ==========================================
 # MCP / Zapier
@@ -532,6 +532,7 @@ async def run_agent_stream(current_question, history, session_id, selected_model
         profile = supabase.table("profiles").select("mcp_url,mcp_connected").eq("id",session_id).single().execute()
 
         current_profile.set(profile.data)
+        current_selected_ai_modal.set(selected_model)
         
         # print("PROFILE : ")
         # print(profile.data)
@@ -543,7 +544,7 @@ async def run_agent_stream(current_question, history, session_id, selected_model
         if mcp_connected:
             available_tools.append(zapier_action)
         
-        llm = get_llm(selected_model, available_tools)
+        llm = get_llm(selected_model)
 
         graph = create_agent_graph(
             provider=selected_model,

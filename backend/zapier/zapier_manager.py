@@ -71,6 +71,9 @@ class ZapierManager:
                 f"{user_id} connected ({len(tools)} tools)"
             )
 
+            # # # for tool_name in sorted(self.connections[user_id]["tools"].keys()):
+            # # #     print("MCP TOOL:", tool_name)
+
     ##########################################################
     # Disconnect
     ##########################################################
@@ -109,6 +112,27 @@ class ZapierManager:
 
         return tools[tool_name]
 
+    async def execute_tool(self, user_id, mcp_url, tool_name, params):
+        await self.connect(user_id, mcp_url)
+
+        try:
+
+            tool = self.get_tool(user_id, tool_name)
+
+            return await tool.ainvoke(params)
+
+        except Exception as ex:
+
+            print("Zapier tool execute error:", ex)
+
+            self.disconnect(user_id)
+
+            await self.connect(user_id, mcp_url)
+
+            tool = self.get_tool(user_id, tool_name)
+
+            return await tool.ainvoke(params)
+
     ##########################################################
     # Execute
     ##########################################################
@@ -130,6 +154,8 @@ class ZapierManager:
             mcp_url
         )
 
+        payload = params.copy()
+
         try:
 
             tool = self.get_tool(user_id, tool_name)
@@ -147,7 +173,7 @@ class ZapierManager:
             # else:
             #     payload["params"] = params
 
-            payload = params.copy()
+            
 
             if tool_name == "gmail_find_email":
                 payload = {

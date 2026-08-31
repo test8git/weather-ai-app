@@ -14,7 +14,6 @@ export function ConversationProvider({ children })
   const [conversations, setConversations] = useState([]);
 
   const loadConversationMessages = async (conversationId) => {
-
         const { data, error } =
             await supabase
                 .from("messages")
@@ -25,7 +24,7 @@ export function ConversationProvider({ children })
                 });
 
         if (error) {
-            console.error(error);
+            console.log(error);
             return;
         }
 

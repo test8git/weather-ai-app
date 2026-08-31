@@ -246,7 +246,7 @@ export default function ChatBox() {
 
             if (error)
             {
-                console.error(error);
+                console.log(error);
                 return;
             }
 
@@ -280,7 +280,7 @@ export default function ChatBox() {
 
             if (error)
             {
-                console.error(
+                console.log(
                     "Save User Message Error:",
                     error
                 );
@@ -547,7 +547,7 @@ export default function ChatBox() {
                 }
                 catch (err) 
                 {
-                  console.error("JSON Parse Error", err);
+                  console.log("JSON Parse Error", err);
                 }
                 
             }
@@ -688,7 +688,7 @@ export default function ChatBox() {
       }
       else
       {
-          console.error(error);
+          console.log(error);
           
           setMessages(prev => {
 
@@ -842,7 +842,7 @@ export default function ChatBox() {
 
     } catch (err) {
 
-      console.error(err);
+      console.log(err);
 
       alert("Microphone permission denied");
     }
@@ -892,7 +892,7 @@ export default function ChatBox() {
 
     } catch (err) {
       setGlobalLoading(false);
-      console.error(err);
+      console.log(err);
 
       alert("Failed to transcribe audio");
     }
@@ -1011,7 +1011,7 @@ export default function ChatBox() {
       }
       catch(error)
       {
-          console.error(error);
+          console.log(error);
       }
       finally{
         setGlobalLoading(false);
@@ -1038,7 +1038,7 @@ export default function ChatBox() {
 
       if (error)
       {
-          console.error(error);
+          console.log(error);
           return;
       }
 
@@ -1054,7 +1054,7 @@ export default function ChatBox() {
         );
     }
     catch (err) {
-        console.error(err);
+        console.log(err);
         toast.error(
             "Copy failed"
         );

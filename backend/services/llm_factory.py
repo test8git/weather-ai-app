@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-def get_llm(provider, available_tools):
+def get_llm(provider):
 
     provider = provider.lower()
 

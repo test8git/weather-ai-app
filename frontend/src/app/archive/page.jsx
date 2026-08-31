@@ -52,7 +52,7 @@ export default function ArchivePage()
 
             if (error)
             {
-                console.error(error);
+                console.log(error);
                 return;
             }
 
@@ -76,7 +76,7 @@ export default function ArchivePage()
 
             if (error)
             {
-                console.error(error);
+                console.log(error);
 
                 return;
             }
@@ -123,7 +123,7 @@ export default function ArchivePage()
                     .eq("is_archived", true);
 
             if (error) {
-                console.error(error);
+                console.log(error);
                 alert("Failed to empty archive");
                 return;
             }

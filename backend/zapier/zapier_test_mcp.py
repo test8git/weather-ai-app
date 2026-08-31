@@ -19,7 +19,8 @@ async def main():
         {
             "zapier": {
                 "transport": "http",
-                "url": os.getenv("ZAPIER_MCP_URL")
+                # "url": os.getenv("ZAPIER_MCP_URL")
+                "url": "https://mcp.zapier.com/api/v1/connect?token=OGIyNGRjOWYtZWE4Yi00NDljLTgzYzAtMTljZTI3ZTNhMmQ1OmlKeUw3Y3RwQUlxc2pkWnVoN0tydUs5dUI2c3YyNWwvODRkeDE2NGlhRlk9"
             }
         }
     )
@@ -31,12 +32,27 @@ async def main():
 
 
     for tool in tools:
-        if tool.name.startswith("google_sheets_"):
-            print("Name :", tool.name)
-            print("Description :", tool.description)
-            print("ARGS:", tool.args)
+        if tool.name.startswith("google_calendar"):
 
-    # STEP 1 : Display zaiper actions
+            print("\n================================")
+            print("NAME:")
+            print(tool.name)
+
+            print("\nDESCRIPTION:")
+            print(tool.description)
+
+            print("\nARGS:")
+            print(json.dumps(
+                tool.args,
+                indent=4,
+                default=str
+            ))
+
+
+
+
+
+    # # # # STEP 1 : Display zaiper actions
     # # # tool = next(
     # # #     t for t in tools
     # # #     if t.name == "discover_zapier_actions"

@@ -39,7 +39,7 @@ export function UserProvider({ children })
 
         if (error)
         {
-            console.error("Load Profile Error:", error);
+            console.log("Load Profile Error:", error);
             setProfile(null);
         }
         else

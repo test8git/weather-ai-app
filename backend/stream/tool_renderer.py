@@ -288,7 +288,60 @@ class ToolRenderer:
             return True, events
 
         if tool_result.get("status") == "SUCCESS":
+            
+            # --------------------------------------------------
+            # Google Docs - read_document
+            # --------------------------------------------------
 
+            if (tool_result.get("app") == "google_docs" and tool_result.get("action") == "read_document"):
+
+                #
+                # IMPORTANT:
+                # Do NOT set ctx.finished here.
+                #
+                # The tool has returned the document,
+                # but the LLM still needs to generate
+                # the final user-facing response.
+                #
+
+                print("=== GOOGLE DOC TOOL COMPLETED ===")
+                print("Passing control back to LLM")
+
+                return False, events
+
+                ctx.finished = True
+
+                document_name = (
+                    tool_result.get("document_name")
+                    or "Google Document"
+                )
+
+                document_content = (
+                    tool_result.get("data")
+                    or ""
+                )
+
+                # Don't wrap the actual document in a code block.
+                markdown = (
+                    f"# {document_name}\n\n"
+                    f"{document_content}"
+                )
+
+                ctx.answer = markdown
+
+                events.append(
+                    {
+                        "type": "tool",
+                        "content": markdown,
+                        "sse": sse_event(
+                            "message",
+                            markdown,
+                        ),
+                    }
+                )
+
+                return True, events
+                
             #
             # send_email
             #
